@@ -1,6 +1,6 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
+import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Eye, Edit } from "lucide-react"
 import { Navbar } from "@/components/layout/navbar"
 import { AlertBanner } from "@/components/common/alert-banner"
@@ -11,7 +11,7 @@ import type { FeedbackCategory } from "@/lib/types"
 
 export default function FeedbackPage() {
   const params = useParams()
-  const router = useRouter()
+  const navigate = useNavigate()
   const listingId = params.id as string
 
   const listing = mockListings.find((l) => l.id === listingId) || mockListings[2]
@@ -32,15 +32,15 @@ export default function FeedbackPage() {
   const warningCount = mockFeedbackItems.filter((i) => i.severity === "warning").length
 
   const handleFixItem = (itemId: string, field?: string) => {
-    router.push(`/seller/listings/${listingId}/edit?focus=${field}`)
+    navigate(`/seller/listings/${listingId}/edit?focus=${field}`)
   }
 
   const handleViewListing = () => {
-    router.push(`/seller/listings/${listingId}`)
+    navigate(`/seller/listings/${listingId}`)
   }
 
   const handleFixAndResubmit = () => {
-    router.push(`/seller/listings/${listingId}/edit`)
+    navigate(`/seller/listings/${listingId}/edit`)
   }
 
   return (
@@ -53,7 +53,7 @@ export default function FeedbackPage() {
           <Button
             variant="ghost"
             className="mb-4 -ml-2"
-            onClick={() => router.push("/seller")}
+            onClick={() => navigate("/seller")}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard

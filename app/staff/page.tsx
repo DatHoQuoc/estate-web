@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { ClipboardList, UserCheck, CheckCircle, Timer } from "lucide-react"
 import { Navbar } from "@/components/layout/navbar"
 import { StaffSidebar } from "@/components/layout/staff-sidebar"
@@ -27,7 +26,7 @@ const statusFilterOptions = [
 ]
 
 function StaffDashboardContent() {
-  const router = useRouter()
+  const navigate = useNavigate()
   const searchParams = useSearchParams()
   const [search, setSearch] = useState("")
   const [priorityFilter, setPriorityFilter] = useState("all")
@@ -48,11 +47,11 @@ function StaffDashboardContent() {
   })
 
   const handleClaim = (listingId: string) => {
-    router.push(`/staff/review/${listingId}`)
+    navigate(`/staff/review/${listingId}`)
   }
 
   const handleView = (listingId: string) => {
-    router.push(`/staff/review/${listingId}`)
+    navigate(`/staff/review/${listingId}`)
   }
 
   return (

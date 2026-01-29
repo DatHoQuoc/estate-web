@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Suspense } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Home, CheckCircle, Clock, XCircle, Plus } from "lucide-react"
 import { Navbar } from "@/components/layout/navbar"
 import { SellerSidebar } from "@/components/layout/seller-sidebar"
@@ -12,7 +11,9 @@ import { FilterDropdown } from "@/components/common/filter-dropdown"
 import { Pagination } from "@/components/common/pagination"
 import { ListingsTable } from "@/components/seller/listings-table"
 import { Button } from "@/components/ui/button"
-import { mockUser, mockListings, mockListingStats } from "@/lib/mock-data"
+import { mockUser } from "@/lib/mock-data"
+import { listSellerListings } from "@/lib/api-client"
+import type { Listing } from "@/lib/types"
 
 const statusFilterOptions = [
   { value: "all", label: "All Status" },
@@ -23,27 +24,60 @@ const statusFilterOptions = [
 ]
 
 function SellerDashboardContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const navigate = useNavigate()
+  const [listings, setListings] = useState<Listing[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
 
-  const filteredListings = mockListings.filter((listing) => {
-    const matchesSearch = listing.title
-      .toLowerCase()
-      .includes(search.toLowerCase())
-    const matchesStatus =
-      statusFilter === "all" || listing.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  useEffect(() => {
+    let isMounted = true
+    setLoading(true)
+    listSellerListings()
+      .then((data) => {
+        if (!isMounted) return
+        setListings(data)
+        setError(null)
+      })
+      .catch((err) => {
+        console.error(err)
+        if (isMounted) setError(err.message || "Failed to load listings")
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const filteredListings = useMemo(() => {
+    return listings.filter((listing) => {
+      const matchesSearch = listing.title
+        .toLowerCase()
+        .includes(search.toLowerCase())
+      const matchesStatus =
+        statusFilter === "all" || listing.status === statusFilter
+      return matchesSearch && matchesStatus
+    })
+  }, [listings, search, statusFilter])
+
+  const listingStats = useMemo(() => {
+    const total = listings.length
+    const published = listings.filter((l) => l.status === "published").length
+    const pending = listings.filter((l) => l.status?.includes("pending")).length
+    const rejected = listings.filter((l) => l.status?.includes("rejected") || l.status === "ai_rejected").length
+    return { total, published, pending, rejected }
+  }, [listings])
 
   const handleView = (id: string) => {
-    router.push(`/seller/listings/${id}`)
+    navigate(`/seller/listings/${id}`)
   }
 
   const handleEdit = (id: string) => {
-    router.push(`/seller/listings/${id}/edit`)
+    navigate(`/seller/listings/${id}/edit`)
   }
 
   const handleDelete = (id: string) => {
@@ -64,7 +98,7 @@ function SellerDashboardContent() {
                 Manage and track all your property listings
               </p>
             </div>
-            <Button onClick={() => router.push("/seller/create")}>
+            <Button onClick={() => navigate("/seller/create") }>
               <Plus className="mr-2 h-4 w-4" />
               Create New Listing
             </Button>
@@ -74,25 +108,25 @@ function SellerDashboardContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatsCard
               title="Total Listings"
-              value={mockListingStats.total}
+              value={listingStats.total}
               icon={<Home className="h-5 w-5" />}
-              trend={{ value: 12, direction: "up" }}
+              trend={{ value: 0, direction: "up" }}
             />
             <StatsCard
               title="Published"
-              value={mockListingStats.published}
+              value={listingStats.published}
               icon={<CheckCircle className="h-5 w-5" />}
               variant="success"
             />
             <StatsCard
               title="Pending Review"
-              value={mockListingStats.pending}
+              value={listingStats.pending}
               icon={<Clock className="h-5 w-5" />}
               variant="warning"
             />
             <StatsCard
               title="Rejected"
-              value={mockListingStats.rejected}
+              value={listingStats.rejected}
               icon={<XCircle className="h-5 w-5" />}
               variant="danger"
             />
@@ -119,7 +153,14 @@ function SellerDashboardContent() {
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            isLoading={loading}
           />
+
+          {error && (
+            <div className="mt-4 text-sm text-destructive">
+              Failed to load listings: {error}
+            </div>
+          )}
 
           {/* Pagination */}
           <div className="mt-4 flex justify-center">

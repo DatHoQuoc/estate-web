@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import { MoreHorizontal, Eye, Edit, Trash2, ArrowUpDown } from "lucide-react"
 import {
   Table,
@@ -206,11 +205,10 @@ export function ListingsTable({
                 <div className="flex items-center gap-3">
                   <div className="relative h-12 w-16 rounded overflow-hidden bg-muted flex-shrink-0">
                     {listing.images[0] ? (
-                      <Image
+                      <img
                         src={listing.images[0].thumbnailUrl || "/placeholder.svg"}
                         alt={listing.title}
-                        fill
-                        className="object-cover"
+                        className="object-cover w-full h-full"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">

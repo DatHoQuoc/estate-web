@@ -1,6 +1,7 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import { Navbar } from "@/components/layout/navbar"
 import { ImageGallery } from "@/components/common/image-gallery"
@@ -12,17 +13,61 @@ import {
 } from "@/components/seller/property-details"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { mockUser, mockListings } from "@/lib/mock-data"
+import { mockUser } from "@/lib/mock-data"
+import { getListingDetails } from "@/lib/api-client"
+import type { Listing } from "@/lib/types"
 
 export default function ListingDetailPage() {
   const params = useParams()
-  const router = useRouter()
+  const navigate = useNavigate()
   const listingId = params.id as string
+  const [listing, setListing] = useState<Listing | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const listing = mockListings.find((l) => l.id === listingId) || mockListings[0]
+  useEffect(() => {
+    let isMounted = true
+    setLoading(true)
+    getListingDetails(listingId)
+      .then((data) => {
+        if (!isMounted) return
+        setListing(data)
+        setError(null)
+      })
+      .catch((err) => {
+        console.error(err)
+        if (isMounted) setError(err.message || "Failed to load listing")
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [listingId])
 
   const handleEdit = () => {
-    router.push(`/seller/listings/${listingId}/edit`)
+    navigate(`/seller/listings/${listingId}/edit`)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground text-sm">Loading listing...</p>
+      </div>
+    )
+  }
+
+  if (error || !listing) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="space-y-3 text-center">
+          <p className="text-lg font-semibold text-foreground">Listing unavailable</p>
+          <p className="text-sm text-muted-foreground">{error || "We couldn’t find this listing."}</p>
+          <Button onClick={() => navigate("/seller")}>Back to dashboard</Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -35,7 +80,7 @@ export default function ListingDetailPage() {
           <Button
             variant="ghost"
             className="mb-4 -ml-2"
-            onClick={() => router.push("/seller")}
+            onClick={() => navigate("/seller")}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard

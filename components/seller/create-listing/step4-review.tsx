@@ -1,6 +1,4 @@
 "use client"
-
-import Image from "next/image"
 import { Check, MapPin, Bed, Bath, Square, Calendar, Compass, FileText } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -98,11 +96,10 @@ export function Step4Review({ data, termsAccepted, onTermsChange }: Step4ReviewP
             {/* Image Preview */}
             {coverImage && (
               <div className="relative w-full md:w-64 aspect-[4/3] rounded-lg overflow-hidden flex-shrink-0">
-                <Image
+                <img
                   src={coverImage.preview || "/placeholder.svg"}
                   alt={data.title}
-                  fill
-                  className="object-cover"
+                  className="object-cover w-full h-full"
                 />
                 <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
                   {data.images.length} photos

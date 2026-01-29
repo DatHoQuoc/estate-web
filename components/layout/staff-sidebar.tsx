@@ -2,8 +2,7 @@
 
 import React from "react"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { NavLink, useLocation } from "react-router-dom"
 import {
   LayoutDashboard,
   ClipboardList,
@@ -61,19 +60,20 @@ const menuItems: MenuItem[] = [
 ]
 
 export function StaffSidebar() {
-  const pathname = usePathname()
+  const location = useLocation()
 
   return (
     <aside className="fixed left-0 top-16 w-60 h-[calc(100vh-4rem)] bg-card border-r border-border">
       <nav className="p-4 space-y-1">
         {menuItems.map((item) => {
-          const isActive = pathname === item.path || 
-            (item.path !== "/staff" && pathname.startsWith(item.path))
-          
+          const isActive =
+            location.pathname === item.path ||
+            (item.path !== "/staff" && location.pathname.startsWith(item.path))
+
           return (
-            <Link
+            <NavLink
               key={item.id}
-              href={item.path}
+              to={item.path}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive
@@ -83,7 +83,7 @@ export function StaffSidebar() {
             >
               {item.icon}
               {item.label}
-            </Link>
+            </NavLink>
           )
         })}
       </nav>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Save } from "lucide-react"
 import { Navbar } from "@/components/layout/navbar"
 import { FormStepper } from "@/components/common/form-stepper"
@@ -11,6 +11,7 @@ import { Step3MediaUpload } from "@/components/seller/create-listing/step3-media
 import { Step4Review } from "@/components/seller/create-listing/step4-review"
 import { Button } from "@/components/ui/button"
 import { mockUser } from "@/lib/mock-data"
+import { createListingDraft } from "@/lib/api-client"
 
 interface FormData {
   // Step 1
@@ -63,10 +64,12 @@ const steps = [
 ]
 
 export default function CreateListingPage() {
-  const router = useRouter()
+  const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [termsAccepted, setTermsAccepted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const stepsWithStatus = steps.map((step) => ({
     ...step,
@@ -94,13 +97,57 @@ export default function CreateListingPage() {
     }
   }
 
-  const handleSaveDraft = () => {
-    console.log("Saving draft:", formData)
+  const handleSaveDraft = async () => {
+    setSubmitting(true)
+    setError(null)
+    try {
+      await createListingDraft({
+        title: formData.title,
+        description: formData.description,
+        listingType: formData.transactionType,
+        propertyType: formData.propertyType,
+        price: formData.price,
+        priceCurrency: "USD",
+        areaSqm: formData.area,
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        floorNumber: formData.floor ?? undefined,
+        yearBuilt: formData.yearBuilt ?? undefined,
+        streetAddress: formData.address,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to save draft"
+      setError(message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  const handleSubmit = () => {
-    console.log("Submitting for review:", formData)
-    router.push("/seller")
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    setError(null)
+    try {
+      await createListingDraft({
+        title: formData.title,
+        description: formData.description,
+        listingType: formData.transactionType,
+        propertyType: formData.propertyType,
+        price: formData.price,
+        priceCurrency: "USD",
+        areaSqm: formData.area,
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        floorNumber: formData.floor ?? undefined,
+        yearBuilt: formData.yearBuilt ?? undefined,
+        streetAddress: formData.address,
+      })
+      navigate("/seller")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to submit listing"
+      setError(message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const isStepValid = () => {
@@ -136,7 +183,7 @@ export default function CreateListingPage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => router.push("/seller")}
+              onClick={() => navigate("/seller")}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -229,12 +276,16 @@ export default function CreateListingPage() {
                   Next
                 </Button>
               ) : (
-                <Button onClick={handleSubmit} disabled={!isStepValid()}>
+                <Button onClick={handleSubmit} disabled={!isStepValid() || submitting}>
                   Submit for Review
                 </Button>
               )}
             </div>
           </div>
+
+          {error && (
+            <p className="text-sm text-destructive mt-4">{error}</p>
+          )}
         </div>
       </main>
     </div>
