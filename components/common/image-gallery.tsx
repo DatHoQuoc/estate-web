@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import { ChevronLeft, ChevronRight, X, Expand } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -37,12 +36,10 @@ export function ImageGallery({ images, coverImageIndex = 0 }: ImageGalleryProps)
       <div className="space-y-3">
         {/* Main Image */}
         <div className="relative aspect-video rounded-lg overflow-hidden bg-muted group">
-          <Image
+          <img
             src={images[currentIndex]?.url || "/placeholder.svg"}
             alt={images[currentIndex]?.alt || "Property image"}
-            fill
-            className="object-cover"
-            priority
+            className="object-cover w-full h-full"
           />
 
           {/* Navigation Arrows */}
@@ -98,11 +95,10 @@ export function ImageGallery({ images, coverImageIndex = 0 }: ImageGalleryProps)
                     : "border-transparent hover:border-primary/50"
                 )}
               >
-                <Image
+                <img
                   src={image.thumbnailUrl || image.url || "/placeholder.svg"}
                   alt={image.alt}
-                  fill
-                  className="object-cover"
+                  className="object-cover w-full h-full"
                 />
               </button>
             ))}
@@ -132,11 +128,10 @@ export function ImageGallery({ images, coverImageIndex = 0 }: ImageGalleryProps)
           </Button>
 
           <div className="relative w-full max-w-5xl aspect-video mx-16">
-            <Image
+            <img
               src={images[currentIndex]?.url || "/placeholder.svg"}
               alt={images[currentIndex]?.alt || "Property image"}
-              fill
-              className="object-contain"
+              className="object-contain w-full h-full"
             />
           </div>
 

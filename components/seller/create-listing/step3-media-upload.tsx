@@ -3,7 +3,6 @@
 import React from "react"
 
 import { useState, useCallback } from "react"
-import Image from "next/image"
 import { Upload, X, Star, GripVertical, ImageIcon, Video } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -175,11 +174,10 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                     image.isCover ? "border-primary" : "border-transparent"
                   )}
                 >
-                  <Image
+                  <img
                     src={image.preview || "/placeholder.svg"}
                     alt="Preview"
-                    fill
-                    className="object-cover"
+                    className="object-cover w-full h-full"
                   />
 
                   {/* Cover Badge */}

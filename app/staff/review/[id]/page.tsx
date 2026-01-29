@@ -1,22 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
-import { Navbar } from "@/components/layout/navbar"
-import { ImageGallery } from "@/components/common/image-gallery"
+import { Navbar } from "@components/layout/navbar"
+import { ImageGallery } from "@components/common/image-gallery"
 import {
   PropertyHeader,
   PropertySpecs,
   AmenitiesList,
-} from "@/components/seller/property-details"
-import { AICheckResults } from "@/components/staff/ai-check-results"
-import { ReviewChecklist } from "@/components/staff/review-checklist"
-import { ReviewActionPanel } from "@/components/staff/review-action-panel"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+} from "@components/seller/property-details"
+import { AICheckResults } from "@components/staff/ai-check-results"
+import { ReviewChecklist } from "@components/staff/review-checklist"
+import { ReviewActionPanel } from "@components/staff/review-action-panel"
+import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card"
+import { Button } from "@components/ui/button"
+import { Textarea } from "@components/ui/textarea"
+import { Label } from "@components/ui/label"
 import {
   mockStaffUser,
   mockListings,
@@ -27,7 +27,7 @@ import type { ChecklistItem } from "@/lib/types"
 
 export default function StaffReviewDetailPage() {
   const params = useParams()
-  const router = useRouter()
+  const navigate = useNavigate()
   const listingId = params.id as string
 
   const listing = mockListings.find((l) => l.id === listingId) || mockListings[1]
@@ -47,17 +47,17 @@ export default function StaffReviewDetailPage() {
 
   const handleApprove = () => {
     console.log("Approving listing:", listingId, { staffNotes })
-    router.push("/staff")
+    navigate("/staff")
   }
 
   const handleRequestEdit = (feedback: string) => {
     console.log("Requesting edit:", listingId, { feedback, staffNotes })
-    router.push("/staff")
+    navigate("/staff")
   }
 
   const handleReject = (reason: string, feedback: string) => {
     console.log("Rejecting listing:", listingId, { reason, feedback, staffNotes })
-    router.push("/staff")
+    navigate("/staff")
   }
 
   return (
@@ -70,7 +70,7 @@ export default function StaffReviewDetailPage() {
           <Button
             variant="ghost"
             className="mb-4 -ml-2"
-            onClick={() => router.push("/staff")}
+            onClick={() => navigate("/staff")}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Review Queue

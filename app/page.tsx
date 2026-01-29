@@ -1,12 +1,10 @@
-"use client"
-
-import { useRouter } from "next/navigation"
+import { useNavigate } from "react-router-dom"
 import { Building2, Users, ArrowRight, CheckCircle, Shield, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function HomePage() {
-  const router = useRouter()
+  const navigate = useNavigate()
 
   return (
     <div className="min-h-screen bg-background">
@@ -20,10 +18,10 @@ export default function HomePage() {
             <span className="text-xl font-semibold text-foreground">PropList</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => router.push("/seller")}>
+            <Button variant="ghost" onClick={() => navigate("/seller")}>
               Seller Portal
             </Button>
-            <Button variant="ghost" onClick={() => router.push("/staff")}>
+            <Button variant="ghost" onClick={() => navigate("/staff")}>
               Staff Portal
             </Button>
           </div>
@@ -41,11 +39,11 @@ export default function HomePage() {
             and streamlined staff review workflows.
           </p>
           <div className="mt-10 flex items-center justify-center gap-4">
-            <Button size="lg" onClick={() => router.push("/seller")}>
+            <Button size="lg" onClick={() => navigate("/seller")}>
               <Building2 className="mr-2 h-5 w-5" />
               Seller Dashboard
             </Button>
-            <Button size="lg" variant="outline" onClick={() => router.push("/staff")}>
+            <Button size="lg" variant="outline" onClick={() => navigate("/staff")}>
               <Users className="mr-2 h-5 w-5" />
               Staff Dashboard
             </Button>
@@ -107,7 +105,7 @@ export default function HomePage() {
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             {/* Seller Portal */}
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => router.push("/seller")}>
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate("/seller")}>
               <CardHeader>
                 <div className="flex items-center gap-4">
                   <div className="p-3 rounded-xl bg-primary/10">
@@ -146,7 +144,7 @@ export default function HomePage() {
             </Card>
 
             {/* Staff Portal */}
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => router.push("/staff")}>
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate("/staff")}>
               <CardHeader>
                 <div className="flex items-center gap-4">
                   <div className="p-3 rounded-xl bg-blue-500/10">

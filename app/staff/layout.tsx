@@ -1,10 +1,4 @@
 import React from "react"
-import type { Metadata } from "next"
-
-export const metadata: Metadata = {
-  title: "Staff Dashboard - PropList",
-  description: "Review and manage property listings",
-}
 
 export default function StaffLayout({
   children,
