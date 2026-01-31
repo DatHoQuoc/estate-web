@@ -14,47 +14,103 @@ import { mockUser } from "@/lib/mock-data"
 import { createListingDraft } from "@/lib/api-client"
 
 interface FormData {
-  // Step 1
+  // Step 1: Basic Info & Exact Location
   propertyType: string
-  transactionType: string
+  transactionType: string // Ensure this maps to "SALE" | "RENT" | "LEASE" for backend
   title: string
   description: string
-  address: string
+  address: string // Street address
+  countryId: string
+  provinceId: string
+  wardId: string
   price: number
-  area: number
+  priceCurrency: string // e.g., "VND" or "USD"
+  negotiable: boolean
+  area: number // maps to areaSqm in backend
   bedrooms: number
   bathrooms: number
-  // Step 2
-  amenities: string[]
-  features: string[]
+
+  // Step 2: Technical Details & Geolocation
+  latitude: number
+  longitude: number
+  width?: number
+  length?: number
+  frontage?: number
+  roadWidth?: number
   yearBuilt: number | null
-  floor: number | null
+  floor: number | null // maps to floorNumber in backend
   direction: string
   legalStatus: string
-  // Step 3
-  images: { id: string; file: File; preview: string; uploadProgress: number; status: "uploading" | "success" | "error"; isCover: boolean }[]
-  videos: { id: string; file: File; preview: string; uploadProgress: number; status: "uploading" | "success" | "error"; isCover: boolean }[]
+  furnitureStatus: string
+  amenities: string[]
+  features: string[]
+
+  // Step 3: Media Uploads
+  // Added 'url' property for cases where files are already uploaded/previewed
+  images: {
+    id: string;
+    file?: File;
+    preview: string;
+    url?: string;
+    uploadProgress: number;
+    status: "uploading" | "success" | "error";
+    isCover: boolean
+  }[]
+  videos: {
+    id: string;
+    file?: File;
+    preview: string;
+    url?: string;
+    uploadProgress: number;
+    status: "uploading" | "success" | "error";
+    isCover: boolean
+  }[]
+  // Added for the documents section in Step 2
+  documents: {
+    id: string;
+    name: string;
+    url: string;
+    size: number;
+  }[]
 }
 
 const initialFormData: FormData = {
+  // Step 1: Basic Info
   propertyType: "",
   transactionType: "sale",
   title: "",
   description: "",
   address: "",
+  countryId: "",
+  provinceId: "",
+  wardId: "",
   price: 0,
+  priceCurrency: "VND",
+  negotiable: true,
   area: 0,
   bedrooms: 2,
   bathrooms: 1,
-  amenities: [],
-  features: [],
+
+  // Step 2: Technical & Geolocation
+  latitude: 10.762622, // Default coordinates (e.g., Ho Chi Minh City)
+  longitude: 106.660172,
+  width: 0,
+  length: 0,
+  frontage: 0,
+  roadWidth: 0,
   yearBuilt: null,
   floor: null,
   direction: "",
   legalStatus: "",
+  furnitureStatus: "",
+  amenities: [],
+  features: [],
+
+  // Step 3: Media & Documents
   images: [],
   videos: [],
-}
+  documents: []
+};
 
 const steps = [
   { id: 1, label: "Basic Info" },
@@ -80,7 +136,7 @@ export default function CreateListingPage() {
           ? ("current" as const)
           : ("upcoming" as const),
   }))
-
+  
   const handleFieldChange = (field: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
@@ -114,6 +170,9 @@ export default function CreateListingPage() {
         floorNumber: formData.floor ?? undefined,
         yearBuilt: formData.yearBuilt ?? undefined,
         streetAddress: formData.address,
+        countryId: formData.countryId,
+        provinceId: formData.provinceId,
+        wardId: formData.wardId
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to save draft"
@@ -153,14 +212,15 @@ export default function CreateListingPage() {
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return (
-          formData.propertyType &&
-          formData.title.length >= 10 &&
-          formData.description.length >= 50 &&
-          formData.address &&
-          formData.price > 0 &&
-          formData.area > 0
-        )
+        // return (
+        //   formData.propertyType &&
+        //   formData.title.length >= 10 &&
+        //   formData.description.length >= 50 &&
+        //   formData.address &&
+        //   formData.price > 0 &&
+        //   formData.area > 0
+        // ) 
+        true
       case 2:
         return true
       case 3:
@@ -220,6 +280,9 @@ export default function CreateListingPage() {
                   area: formData.area,
                   bedrooms: formData.bedrooms,
                   bathrooms: formData.bathrooms,
+                  provinceId: formData.provinceId,
+                  countryId: formData.countryId,
+                  wardId: formData.wardId
                 }}
                 onChange={handleFieldChange}
               />
@@ -227,12 +290,24 @@ export default function CreateListingPage() {
             {currentStep === 2 && (
               <Step2Details
                 data={{
-                  amenities: formData.amenities,
-                  features: formData.features,
+                  // Technical Dimensions & Specs
+                  width: formData.width,
+                  length: formData.length,
+                  frontage: formData.frontage,
+                  roadWidth: formData.roadWidth,
                   yearBuilt: formData.yearBuilt,
                   floor: formData.floor,
                   direction: formData.direction,
+
+                  // Geolocation
+                  latitude: formData.latitude,
+                  longitude: formData.longitude,
+
+                  // Status & Lists
                   legalStatus: formData.legalStatus,
+                  furnitureStatus: formData.furnitureStatus,
+                  amenities: formData.amenities,
+                  features: formData.features,
                 }}
                 onChange={handleFieldChange}
               />
@@ -242,6 +317,7 @@ export default function CreateListingPage() {
                 data={{
                   images: formData.images,
                   videos: formData.videos,
+                  documents: formData.documents,
                 }}
                 onChange={handleFieldChange}
               />

@@ -1,4 +1,4 @@
-import type { Listing } from "@/lib/types"
+import type { Listing, Country, Province, Ward } from "@/lib/types"
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080"
 
@@ -67,6 +67,8 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
+       "X-User-Id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+
       ...init?.headers,
     },
     ...init,
@@ -168,4 +170,30 @@ export async function deleteListingDraft(id: string): Promise<void> {
 
 export async function submitListingForReview(id: string): Promise<void> {
   await fetchJson<void>(`${API_BASE}/api/v1/seller/listings/${id}/submit`, { method: "PUT" })
+}
+
+export async function getCountries(): Promise<Country[]> {
+  return fetchJson<Country[]>(`${API_BASE}/api/v1/locations/countries`);
+}
+
+export async function getProvinces(countryId: string): Promise<Province[]> {
+  return fetchJson<Province[]>(`${API_BASE}/api/v1/locations/provinces?countryId=${countryId}`);
+}
+
+export async function getWards(provinceId: string): Promise<Ward[]> {
+  return fetchJson<Ward[]>(`${API_BASE}/api/v1/locations/wards?provinceId=${provinceId}`);
+}
+
+export async function getCoordinates(address: string) {
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+  );
+  const data = await response.json();
+  if (data && data.length > 0) {
+    return {
+      lat: parseFloat(data[0].lat),
+      lng: parseFloat(data[0].lon),
+    };
+  }
+  return null;
 }

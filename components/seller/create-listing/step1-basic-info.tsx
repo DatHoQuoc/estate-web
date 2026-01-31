@@ -15,6 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import type { Listing, Country, Province, Ward } from "@/lib/types"
+import { useState, useEffect } from "react"
+import { getCountries, getProvinces, getWards } from "@/lib/api-client"
 
 interface Step1BasicInfoProps {
   data: {
@@ -27,6 +30,9 @@ interface Step1BasicInfoProps {
     area: number
     bedrooms: number
     bathrooms: number
+    countryId: string
+    provinceId: string
+    wardId: string
   }
   onChange: (field: string, value: string | number) => void
 }
@@ -41,11 +47,51 @@ const propertyTypes = [
 ]
 
 export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
+  const [countries, setCountries] = useState<Country[]>([])
+  const [provinces, setProvinces] = useState<Province[]>([])
+  const [wards, setWards] = useState<Ward[]>([])
+
+
+  //Get api
+  useEffect(() => {
+    getCountries().then(setCountries).catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    if (data.countryId) {
+      getProvinces(data.countryId).then(setProvinces).catch(console.error)
+    } else {
+      setProvinces([])
+    }
+  }, [data.countryId])
+
+  useEffect(() => {
+    if (data.provinceId) {
+      getWards(data.provinceId).then(setWards).catch(console.error)
+    } else {
+      setWards([])
+    }
+  }, [data.provinceId])
+
+
+  //handle
+  const handleCountryChange = (val: string) => {
+    onChange("countryId", val)
+    onChange("provinceId", "")
+    onChange("wardId", "")
+  }
+
+  const handleProvinceChange = (val: string) => {
+    onChange("provinceId", val)
+    onChange("wardId", "")
+  }
+
   const handleCounterChange = (field: string, delta: number) => {
     const currentValue = data[field as keyof typeof data] as number
     const newValue = Math.max(0, Math.min(10, currentValue + delta))
     onChange(field, newValue)
   }
+  //Return
 
   return (
     <div className="space-y-6">
@@ -135,19 +181,78 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="address">
-              Address <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="address"
-              placeholder="Enter property address"
-              value={data.address}
-              onChange={(e) => onChange("address", e.target.value)}
-            />
-          </div>
+         
         </CardContent>
       </Card>
+
+      <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Location Details</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>Country</Label>
+          <Select value={data.countryId} onValueChange={handleCountryChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Country" />
+            </SelectTrigger>
+            <SelectContent>
+              {countries.map((c) => (
+                <SelectItem key={c.countryId} value={c.countryId}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Province / City</Label>
+            <Select 
+              disabled={!data.countryId} 
+              value={data.provinceId} 
+              onValueChange={handleProvinceChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Province" />
+              </SelectTrigger>
+              <SelectContent>
+                {provinces.map((p) => (
+                  <SelectItem key={p.provinceId} value={p.provinceId}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Ward / District</Label>
+            <Select 
+              disabled={!data.provinceId} 
+              value={data.wardId} 
+              onValueChange={(val) => onChange("wardId", val)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Ward" />
+              </SelectTrigger>
+              <SelectContent>
+                {wards.map((w) => (
+                  <SelectItem key={w.wardId} value={w.wardId}>{w.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="address">Street Address</Label>
+          <Input
+            id="address"
+            placeholder="e.g. 123 Nguyen Hue Street"
+            value={data.address}
+            onChange={(e) => onChange("address", e.target.value)}
+          />
+        </div>
+      </CardContent>
+    </Card>
 
       <Card>
         <CardHeader>
@@ -157,12 +262,9 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="price">
-                Price (USD) <span className="text-destructive">*</span>
+                Price (VND) <span className="text-destructive">*</span>
               </Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  $
-                </span>
                 <Input
                   id="price"
                   type="number"
@@ -171,6 +273,9 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
                   onChange={(e) => onChange("price", Number(e.target.value))}
                   className="pl-7"
                 />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  đ
+                </span>
               </div>
               {data.transactionType === "rental" && (
                 <p className="text-xs text-muted-foreground">per month</p>

@@ -8,21 +8,41 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-interface UploadedFile {
-  id: string
-  file: File
-  preview: string
-  uploadProgress: number
-  status: "uploading" | "success" | "error"
+interface UploadedFileImage {
+  id: string;
+  file?: File;
+  preview: string;
+  url?: string;
+  uploadProgress: number;
+  status: "uploading" | "success" | "error";
   isCover: boolean
 }
 
+interface UploadedFileVideo {
+  id: string;
+  file?: File;
+  preview: string;
+  url?: string;
+  uploadProgress: number;
+  status: "uploading" | "success" | "error";
+  isCover: boolean
+}
+
+
+interface UploadedFileDocument {
+  id: string;
+  name: string;
+  url: string;
+  size: number;
+}
+type MediaValue = UploadedFileImage[] | UploadedFileVideo[] | UploadedFileDocument[];
 interface Step3MediaUploadProps {
   data: {
-    images: UploadedFile[]
-    videos: UploadedFile[]
+    images: UploadedFileImage[]
+    videos: UploadedFileVideo[]
+    documents: UploadedFileDocument[]
   }
-  onChange: (field: string, value: UploadedFile[]) => void
+  onChange: (field: "images" | "videos" | "documents", value: MediaValue) => void;
 }
 
 export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
@@ -58,7 +78,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
   }
 
   const handleFiles = (files: File[]) => {
-    const newImages: UploadedFile[] = files.map((file, index) => ({
+    const newImages: UploadedFileImage[] = files.map((file, index) => ({
       id: `${Date.now()}-${index}`,
       file,
       preview: URL.createObjectURL(file),
@@ -91,7 +111,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
       file.type.startsWith("video/")
     )
 
-    const newVideos: UploadedFile[] = files.map((file, index) => ({
+    const newVideos: UploadedFileVideo[] = files.map((file, index) => ({
       id: `video-${Date.now()}-${index}`,
       file,
       preview: URL.createObjectURL(file),
@@ -267,10 +287,14 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                   <div className="flex items-center gap-3">
                     <Video className="h-5 w-5 text-muted-foreground" />
                     <span className="text-sm font-medium truncate max-w-[200px]">
-                      {video.file.name}
+                      {video.file?.name}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {(video.file.size / (1024 * 1024)).toFixed(1)} MB
+                      {video.file?.size
+                        ? `${(video.file.size / (1024 * 1024)).toFixed(1)} MB`
+                        : video.url
+                          ? "Uploaded"
+                          : "Pending"}
                     </span>
                   </div>
                   <Button

@@ -175,3 +175,23 @@ export interface ListingFilters {
   sortBy?: "createdAt" | "price" | "views"
   sortOrder?: "asc" | "desc"
 }
+
+
+
+export interface Country {
+  countryId: string
+  name: string
+  code: string;
+}
+
+export interface Province  {
+  provinceId: string
+  name: string
+  countryId: string;
+}
+
+export interface Ward {
+  wardId: string
+  name: string
+  provinceId: string;
+}
