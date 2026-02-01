@@ -17,23 +17,10 @@ import { Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Listing, Country, Province, Ward } from "@/lib/types"
 import { useState, useEffect } from "react"
-import { getCountries, getProvinces, getWards } from "@/lib/api-client"
+import { getCountries, getProvinces, getWards, CreateListingPayload } from "@/lib/api-client"
 
 interface Step1BasicInfoProps {
-  data: {
-    propertyType: string
-    transactionType: string
-    title: string
-    description: string
-    address: string
-    price: number
-    area: number
-    bedrooms: number
-    bathrooms: number
-    countryId: string
-    provinceId: string
-    wardId: string
-  }
+  data: CreateListingPayload
   onChange: (field: string, value: string | number) => void
 }
 
@@ -120,9 +107,9 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Transaction Type</Label>
+            <Label>Listing Type</Label>
             <RadioGroup
-              value={data.transactionType}
+              value={data.listingType}
               onValueChange={(value) => onChange("transactionType", value)}
               className="flex gap-4"
             >
@@ -181,78 +168,129 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
             </p>
           </div>
 
-         
+
         </CardContent>
       </Card>
-
       <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Location Details</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label>Country</Label>
-          <Select value={data.countryId} onValueChange={handleCountryChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select Country" />
-            </SelectTrigger>
-            <SelectContent>
-              {countries.map((c) => (
-                <SelectItem key={c.countryId} value={c.countryId}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <CardHeader>
+          <CardTitle className="text-lg">Structural Details</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="yearBuilt">Year Built</Label>
+              <Input
+                id="yearBuilt"
+                type="number"
+                value={data.yearBuilt}
+                onChange={(e) => onChange("yearBuilt", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="floor">Floors</Label>
+              <Input
+                id="floor"
+                type="number"
+                value={data.floorNumber}
+                onChange={(e) => onChange("floor", e.target.value ? Number(e.target.value) : 0)}
+              />
+            </div>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Legal Status</Label>
+              <Select value={data.legalStatus} onValueChange={(v) => onChange("legalStatus", v)}>
+                <SelectTrigger><SelectValue placeholder="Ownership type" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="red-book">Red Book (Vietnam Standard)</SelectItem>
+                  <SelectItem value="pink-book">Pink Book</SelectItem>
+                  <SelectItem value="contract">Sales Contract</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Furniture</Label>
+              <Select value={data.furnitureStatus} onValueChange={(v) => onChange("furnitureStatus", v)}>
+                <SelectTrigger><SelectValue placeholder="Interior status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full">Fully Furnished</SelectItem>
+                  <SelectItem value="basic">Basic Interior</SelectItem>
+                  <SelectItem value="none">Raw / Empty</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div> */}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Location Details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Province / City</Label>
-            <Select 
-              disabled={!data.countryId} 
-              value={data.provinceId} 
-              onValueChange={handleProvinceChange}
-            >
+            <Label>Country</Label>
+            <Select value={data.countryId} onValueChange={handleCountryChange}>
               <SelectTrigger>
-                <SelectValue placeholder="Select Province" />
+                <SelectValue placeholder="Select Country" />
               </SelectTrigger>
               <SelectContent>
-                {provinces.map((p) => (
-                  <SelectItem key={p.provinceId} value={p.provinceId}>{p.name}</SelectItem>
+                {countries.map((c) => (
+                  <SelectItem key={c.countryId} value={c.countryId}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Ward / District</Label>
-            <Select 
-              disabled={!data.provinceId} 
-              value={data.wardId} 
-              onValueChange={(val) => onChange("wardId", val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Ward" />
-              </SelectTrigger>
-              <SelectContent>
-                {wards.map((w) => (
-                  <SelectItem key={w.wardId} value={w.wardId}>{w.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Province / City</Label>
+              <Select
+                disabled={!data.countryId}
+                value={data.provinceId}
+                onValueChange={handleProvinceChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Province" />
+                </SelectTrigger>
+                <SelectContent>
+                  {provinces.map((p) => (
+                    <SelectItem key={p.provinceId} value={p.provinceId}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="address">Street Address</Label>
-          <Input
-            id="address"
-            placeholder="e.g. 123 Nguyen Hue Street"
-            value={data.address}
-            onChange={(e) => onChange("address", e.target.value)}
-          />
-        </div>
-      </CardContent>
-    </Card>
+            <div className="space-y-2">
+              <Label>Ward / District</Label>
+              <Select
+                disabled={!data.provinceId}
+                value={data.wardId}
+                onValueChange={(val) => onChange("wardId", val)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Ward" />
+                </SelectTrigger>
+                <SelectContent>
+                  {wards.map((w) => (
+                    <SelectItem key={w.wardId} value={w.wardId}>{w.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">Street Address</Label>
+            <Input
+              id="address"
+              placeholder="e.g. 123 Nguyen Hue Street"
+              value={data.streetAddress}
+              onChange={(e) => onChange("address", e.target.value)}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -277,7 +315,7 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
                   đ
                 </span>
               </div>
-              {data.transactionType === "rental" && (
+              {data.listingType === "rental" && (
                 <p className="text-xs text-muted-foreground">per month</p>
               )}
             </div>
@@ -291,7 +329,7 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
                   id="area"
                   type="number"
                   placeholder="0"
-                  value={data.area || ""}
+                  value={data.areaSqm || ""}
                   onChange={(e) => onChange("area", Number(e.target.value))}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">

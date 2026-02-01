@@ -225,7 +225,7 @@ export function ListingsTable({
                 </div>
               </TableCell>
               <TableCell>
-                <StatusBadge status={listing.status} />
+                {/* <StatusBadge status={listing.status} /> */}
               </TableCell>
               <TableCell className="font-medium">
                 {formatPrice(listing.price, listing.transactionType)}
