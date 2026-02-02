@@ -31,6 +31,7 @@ import {
   // ── Image / Video upload APIs ── (you implement these in api-client)
   uploadListingImages,     // (listingId, files: File[]) => Promise<{ urls: string[] }>
   uploadListingVideos,     // (listingId, files: File[]) => Promise<{ videoIds: string[], urls: string[] }>
+  publishListing,
 } from "@/lib/api-client"
 
 import {MediaType} from "@/components/seller/create-listing/step3-media-upload"
@@ -439,6 +440,7 @@ export default function CreateListingPage() {
         await publishTour(listingId)
       }
 
+      await publishListing(listingId)
       navigate("/seller")
     } catch (err) {
       const message =

@@ -7,6 +7,8 @@ import ListingDetailPage from "@app/seller/listings/[id]/page"
 import FeedbackPage from "@app/seller/listings/[id]/feedback/page"
 import StaffDashboardPage from "@app/staff/page"
 import StaffReviewDetailPage from "@app/staff/review/[id]/page"
+import EditListingPage from '@app/seller/listings/[id]/edit/edit-listing'
+import TourEditorPage from '@app/seller/listings/[id]/edit/tour-editor'
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
           <Route path="/staff" element={<StaffDashboardPage />} />
           <Route path="/staff/review/:id" element={<StaffReviewDetailPage />} />
           <Route path="*" element={<HomePage />} />
+          <Route path="/seller/listings/:id/edit" element={<EditListingPage />} />
+          <Route path="/seller/listings/:id/tour/edit" element={<TourEditorPage />} />
         </Routes>
       </RootLayout>
     </BrowserRouter>

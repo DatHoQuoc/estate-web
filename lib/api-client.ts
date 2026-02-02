@@ -141,10 +141,36 @@ export interface TourResponse {
 export interface TourSceneResponse {
   sceneId: string
   sceneName: string
+  panoramaUrl: string
+  sceneOrder: number
   positionX: number
   positionY: number
   positionZ: number
   hotspotsJson: any[]
+}
+
+export interface ImageResponse {
+  imageId: string
+  url: string
+  isCover: boolean
+  displayOrder: number
+}
+
+export interface VideoResponse {
+  videoId: string
+  url: string
+  displayOrder: number
+}
+export interface VirtualTourResponse {
+  tourId: string;       // UUID -> string
+  listingId: string;    // UUID -> string
+  tourUrl: string;
+  tourProvider: string;
+  totalScenes: number;  // Integer -> number
+  isPublished: boolean;
+  createdAt: string;    // OffsetDateTime -> string (ISO Date)
+  updatedAt: string;    // OffsetDateTime -> string (ISO Date)
+  scenes: TourSceneResponse[];
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -195,6 +221,9 @@ function mapApiListing(listing: ApiListingResponse): Listing {
     bedrooms: listing.bedrooms ?? 0,
     bathrooms: listing.bathrooms ?? 0,
     location: {
+      countryId: listing.countryId || "",
+      wardId: listing.wardId || "",
+      provinceId: listing.provinceId || "",
       address: listing.streetAddress || "",
       city: listing.provinceId || "",
       district: listing.countryId || "",
@@ -216,6 +245,9 @@ function mapApiListing(listing: ApiListingResponse): Listing {
       : [],
     videos: [],
     amenities: [],
+    listingType: "",
+    mediaType: "photos_only",
+    areaSqm: 0,
     features: [],
     status: (listing.status as Listing["status"]) || "draft",
     sellerId: listing.userId || "",
@@ -441,4 +473,40 @@ export async function uploadListingVideos(listingId: string, files: File[]): Pro
     urls: ["https://example.com/video1.mp4", "https://example.com/video2.mp4"]
   });
 }
+
+export async function publishListing(listingId: string): Promise<void> {
+  await fetchJson<void>(
+    `${API_BASE}/api/v1/listings/${listingId}/publish`,
+    { method: "PUT" }
+  )
+}
+
+export async function unpublishListing(listingId: string): Promise<void> {
+  await fetchJson<void>(
+    `${API_BASE}/api/v1/listings/${listingId}/unpublish`,
+    { method: "PUT" }
+  )
+}
+
+export async function getListingImages(listingId: string): Promise<ImageResponse[]> {
+  return fetchJson<ImageResponse[]>(
+    `${API_BASE}/api/v1/listings/${listingId}/images`,
+    { method: "GET" }
+  )
+}
+
+export async function getListingVideos(listingId: string): Promise<VideoResponse[]> {
+  return fetchJson<VideoResponse[]>(
+    `${API_BASE}/api/v1/listings/${listingId}/videos`,
+    { method: "GET" }
+  )
+}
+
+export async function getVirtualTour(listingId: string): Promise<VirtualTourResponse> {
+  return fetchJson<VirtualTourResponse>(
+    `${API_BASE}/api/v1/listings/${listingId}/tours`,
+    { method: "GET" }
+  );
+}
+
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import type { Listing, User } from "@/lib/types"
+import { AmenityResponse } from "@/lib/api-client"
 
 interface PropertyHeaderProps {
   listing: Listing
@@ -92,7 +93,7 @@ export function PropertySpecs({ listing }: PropertySpecsProps) {
 }
 
 interface AmenitiesListProps {
-  amenities: string[]
+  amenities: AmenityResponse[]
   features: string[]
 }
 
@@ -118,9 +119,9 @@ export function AmenitiesList({ amenities, features }: AmenitiesListProps) {
             <h4 className="font-medium text-sm text-muted-foreground mb-3">AMENITIES</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {amenities.map((amenity) => (
-                <div key={amenity} className="flex items-center gap-2">
+                <div key={amenity.amenityId} className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-600" />
-                  <span className="text-sm">{amenityLabels[amenity] || amenity}</span>
+                  <span className="text-sm">{amenityLabels[amenity.amenityId] || amenity.amenityName}</span>
                 </div>
               ))}
             </div>

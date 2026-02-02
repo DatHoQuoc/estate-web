@@ -1,3 +1,5 @@
+import { AmenityResponse } from "./api-client"
+
 // Listing Types
 export type ListingStatus =
   | "draft"
@@ -20,6 +22,9 @@ export type PropertyType =
 export type TransactionType = "sale" | "rental"
 
 export interface Location {
+  countryId: string
+  provinceId: string
+  wardId: string
   address: string
   city: string
   district: string
@@ -66,7 +71,7 @@ export interface Listing {
   location: Location
   images: Image[]
   videos: Video[]
-  amenities: string[]
+  amenities: AmenityResponse[]
   features: string[]
   status: ListingStatus
   sellerId: string
@@ -194,4 +199,31 @@ export interface Ward {
   wardId: string
   name: string
   provinceId: string;
+}
+
+
+export interface Listing {
+  id: string
+  title: string
+  description: string
+  propertyType: PropertyType
+  listingType: string
+  price: number
+  areaSqm: number
+  bedrooms: number
+  bathrooms: number
+  floorNumber?: number
+  yearBuilt?: number
+  direction?: string
+  legalStatus?: string
+  furnitureStatus?: string
+  status: ListingStatus
+  mediaType: "photos_only" | "photos_and_tour"
+  createdAt: string
+  updatedAt: string
+  location: Location
+  images: Image[]
+  amenities: AmenityResponse[]
+  features: string[]
+  seller: User
 }
