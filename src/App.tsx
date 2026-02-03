@@ -9,11 +9,13 @@ import StaffDashboardPage from "@app/staff/page"
 import StaffReviewDetailPage from "@app/staff/review/[id]/page"
 import EditListingPage from '@app/seller/listings/[id]/edit/edit-listing'
 import TourEditorPage from '@app/seller/listings/[id]/edit/tour-editor'
+import { Toaster } from "sonner"
 
 function App() {
   return (
     <BrowserRouter>
       <RootLayout>
+        <Toaster position="top-right" />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/seller" element={<SellerDashboardPage />} />

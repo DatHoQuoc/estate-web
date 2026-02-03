@@ -28,7 +28,7 @@ export function PropertyHeader({ listing, isOwner, onEdit }: PropertyHeaderProps
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <StatusBadge status={listing.status} />
+            {/* <StatusBadge status={listing.status} /> */}
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">
             {listing.title}
@@ -94,7 +94,6 @@ export function PropertySpecs({ listing }: PropertySpecsProps) {
 
 interface AmenitiesListProps {
   amenities: AmenityResponse[]
-  features: string[]
 }
 
 const amenityLabels: Record<string, string> = {
@@ -107,7 +106,7 @@ const amenityLabels: Record<string, string> = {
   Balcony: "Balcony",
 }
 
-export function AmenitiesList({ amenities, features }: AmenitiesListProps) {
+export function AmenitiesList({ amenities }: AmenitiesListProps) {
   return (
     <Card>
       <CardHeader>
@@ -128,19 +127,7 @@ export function AmenitiesList({ amenities, features }: AmenitiesListProps) {
           </div>
         )}
 
-        {features.length > 0 && (
-          <div>
-            <h4 className="font-medium text-sm text-muted-foreground mb-3">FEATURES</h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {features.map((feature) => (
-                <div key={feature} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-600" />
-                  <span className="text-sm">{feature}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        
       </CardContent>
     </Card>
   )

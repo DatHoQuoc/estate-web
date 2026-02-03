@@ -184,7 +184,6 @@ export default function ListingDetailPage() {
 
               <AmenitiesList
                 amenities={listing.amenities}
-                features={listing.features}
               />
 
               <Card>
