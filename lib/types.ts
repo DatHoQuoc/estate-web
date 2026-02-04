@@ -84,6 +84,7 @@ export interface Listing {
   floor?: number
   direction?: string
   legalStatus?: string
+  featuredImageUrl: string
 }
 
 export interface ListingStats {
@@ -226,4 +227,20 @@ export interface Listing {
   amenities: AmenityResponse[]
   features: string[]
   seller: User
+}
+
+export interface MergedListing {
+ id: string;
+    title: string;
+    seller: {
+        name: string;
+        type: "individual" | "broker";
+    };
+    priority: Priority;
+    waitTime: number;
+    submittedAt: string;
+    assignedTo?: string;
+    propertyType: PropertyType;
+    price: number;
+    thumbnailUrl?: string;
 }

@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { mockUser } from "@/lib/mock-data"
-import { listSellerListings, publishListing, unpublishListing } from "@/lib/api-client"
+import { listSellerListings, submitListingForReview, unpublishListing } from "@/lib/api-client"
 import type { Listing } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -100,7 +100,7 @@ function SellerDashboardContent() {
   const handlePublish = async (id: string) => {
     setActionLoading(id)
     try {
-      await publishListing(id)
+      await submitListingForReview(id)
       await loadListings()
     } catch (err) {
       console.error(err)
@@ -124,10 +124,10 @@ function SellerDashboardContent() {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { bg: string; text: string; label: string }> = {
       published: { bg: "bg-emerald-100", text: "text-emerald-700", label: "Published" },
-      pending_staff_review: { bg: "bg-amber-100", text: "text-amber-700", label: "Pending Review" },
+      pending_review: { bg: "bg-amber-100", text: "text-amber-700", label: "Pending Review" },
       draft: { bg: "bg-gray-100", text: "text-gray-700", label: "Draft" },
       ai_rejected: { bg: "bg-red-100", text: "text-red-700", label: "AI Rejected" },
-      staff_rejected: { bg: "bg-red-100", text: "text-red-700", label: "Rejected" },
+      rejected: { bg: "bg-red-100", text: "text-red-700", label: "Rejected" },
     }
 
     const variant = variants[status] || variants.draft
@@ -241,7 +241,7 @@ function SellerDashboardContent() {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <img
-                              src={listing.images.find((img) => img.isCover)?.url || listing.images[0]?.url}
+                              src={listing.featuredImageUrl}
                               alt={listing.title}
                               className="w-12 h-12 rounded-lg object-cover"
                             />
@@ -259,7 +259,7 @@ function SellerDashboardContent() {
                           ${listing.price.toLocaleString()}
                         </td>
                         <td className="px-6 py-4">
-                          {getStatusBadge(listing.status)}
+                          {getStatusBadge(listing.status.toLocaleLowerCase())}
                         </td>
                         <td className="px-6 py-4 text-sm text-muted-foreground">
                           {new Date(listing.createdAt).toLocaleDateString()}
@@ -294,7 +294,7 @@ function SellerDashboardContent() {
                                 </>
                               )}
 
-                              {listing.status === "pending_staff_review" && (
+                              {listing.status.toLowerCase() === "pending_review" && (
                                 <DropdownMenuItem onClick={() => handleUnpublish(listing.id)}>
                                   <RotateCcw className="mr-2 h-4 w-4" />
                                   Withdraw
@@ -317,7 +317,7 @@ function SellerDashboardContent() {
                                 </>
                               )}
 
-                              {(listing.status === "ai_rejected" || listing.status === "staff_rejected") && (
+                              {(listing.status.toLowerCase() === "rejected" || listing.status === "staff_rejected") && (
                                 <>
                                   <DropdownMenuItem onClick={() => handleEdit(listing.id)}>
                                     <Edit className="mr-2 h-4 w-4" />

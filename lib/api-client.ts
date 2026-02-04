@@ -28,7 +28,7 @@ interface ApiListingResponse {
   buildingName?: string
   latitude?: number
   longitude?: number
-  featuredImageUrl?: string
+  featuredImageUrl: string
   viewCount?: number
   saveCount?: number
   contactCount?: number
@@ -43,6 +43,7 @@ interface ApiListingResponse {
     amenityCategory: string
     iconUrl: string
   }>
+  imageUrls: string[]
 }
 
 export interface CreateListingPayload {
@@ -255,18 +256,19 @@ function mapApiListing(listing: ApiListingResponse): Listing {
       lat: listing.latitude ?? 0,
       lng: listing.longitude ?? 0,
     },
-    images: listing.featuredImageUrl
-      ? [
-          {
-            id: "featured",
-            url: listing.featuredImageUrl,
-            thumbnailUrl: listing.featuredImageUrl,
-            alt: listing.title,
-            isCover: true,
-            order: 0,
-          },
-        ]
-      : [],
+    images: (listing.imageUrls || []).map((url, index) => {
+      const idMatch = url.match(/\/images\/([^.?]+)/);
+      const id = idMatch ? idMatch[1] : `img-${index}`;
+      
+      return {
+        id: id,
+        url: url,
+        thumbnailUrl: url,
+        alt: `${listing.title} - ${index + 1}`,
+        isCover: url === listing.featuredImageUrl || (index === 0 && !listing.featuredImageUrl),
+        order: index,
+      };
+    }) ,
     videos: [],
     amenities: listing.amenities?.map(a => ({
       amenityId: a.amenityId,
@@ -294,6 +296,7 @@ function mapApiListing(listing: ApiListingResponse): Listing {
     floor: listing.floorNumber,
     direction: undefined,
     legalStatus: undefined,
+    featuredImageUrl: listing.featuredImageUrl ?? undefined
   }
 }
 
@@ -304,6 +307,7 @@ export async function listSellerListings(): Promise<Listing[]> {
   const items = data.content || data.data || data.items || []
   return items.map(mapApiListing)
 }
+
 
 export async function getListingDetails(id: string): Promise<Listing> {
   const listing = await fetchJson<ApiListingResponse>(`${API_BASE}/api/v1/seller/listings/${id}`)
@@ -546,12 +550,17 @@ export async function getStaffListingDetails(listingId: string): Promise<Listing
 
 export async function approveListing(
   listingId: string, 
-  staffNotes: string, 
+  staffNotesInternal: string,
+  feedbackToSeller: string, 
   checklist: ChecklistItem[]
 ): Promise<void> {
+  const checklistMap = checklist.reduce((acc, item) => {
+    acc[item.label] = item.checked;
+    return acc;
+  }, {} as Record<string, boolean>);
   await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/approve`, {
     method: "POST",
-    body: JSON.stringify({ staffNotes, checklist }),
+    body: JSON.stringify({ staffNotesInternal, feedbackToSeller, checklist: checklistMap }),
   })
 }
 
@@ -584,17 +593,17 @@ export async function getReviewHistory(listingId: string): Promise<ReviewHistory
 }
 
 export async function saveStaffNotes(listingId: string, notes: string): Promise<void> {
-  await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/notes`, {
-    method: "PUT",
-    body: JSON.stringify({ notes }),
-  })
+  // await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/notes`, {
+  //   method: "PUT",
+  //   body: JSON.stringify({ notes }),
+  // })
 }
 
 export async function updateChecklist(listingId: string, checklist: ChecklistItem[]): Promise<void> {
-  await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/checklist`, {
-    method: "PUT",
-    body: JSON.stringify({ checklist }),
-  })
+  // await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/checklist`, {
+  //   method: "PUT",
+  //   body: JSON.stringify({ checklist }),
+  // })
 }
 
 export async function getPendingReviewListings(): Promise<Listing[]> {

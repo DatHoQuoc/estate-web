@@ -27,7 +27,7 @@ import { toast } from "sonner"
 import { mockStaffUser, mockChecklist } from "@/lib/mock-data"
 import type { ChecklistItem, AICheck, Listing } from "@/lib/types"
 import type { FeedbackResponse } from "@/lib/report-service-type"
-import type { ReviewHistoryItem } from "@/lib/api-client"
+import type { ReviewHistoryItem, TourSceneResponse } from "@/lib/api-client"
 import { getFeedbackByListing } from "@/lib/report-service-api"
 import {
   getListingDetails,
@@ -39,8 +39,11 @@ import {
   updateChecklist,
   getAllListingAmenities,
 } from "@/lib/api-client"
-import { getListingImages, getListingVideos } from "@/lib/api-client"
-import TourEditorPage from '@app/seller/listings/[id]/edit/tour-editor'
+import { getListingImages, getListingVideos, getVirtualTour } from "@/lib/api-client"
+import { VirtualTourPreview } from '@components/virtual-tour/VirtualTourPreview'
+import { useSearchParams } from "react-router-dom"
+import { VirtualTourEditor } from "@/components/virtual-tour/VirtualTourEditor"
+import { useVirtualTour } from "@/components/virtual-tour/hooks/useVirtualTour"
 
 function mapFeedbackToAIChecks(feedbacks: FeedbackResponse[]): AICheck[] {
   const checkTypeMap: Record<string, AICheck["type"]> = {
@@ -55,6 +58,7 @@ function mapFeedbackToAIChecks(feedbacks: FeedbackResponse[]): AICheck[] {
     REJECTED: "fail",
     PENDING_REVIEW: "warning",
   }
+
 
   return feedbacks.map((feedback) => ({
     type: checkTypeMap[feedback.checkType] || "content_policy",
@@ -76,10 +80,21 @@ export default function StaffReviewDetailPage() {
   const [listing, setListing] = useState<Listing | null>(null)
   const [checklist, setChecklist] = useState<ChecklistItem[]>(mockChecklist)
   const [staffNotes, setStaffNotes] = useState("")
+  const [feedbackToSeller, setfeedbackToSeller] = useState("")
   const [checks, setChecks] = useState<AICheck[]>([])
   const [reviewHistory, setReviewHistory] = useState<ReviewHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [searchParams] = useSearchParams()
+  const [initialScenes, setInitialScenes] = useState<TourSceneResponse[]>([])
+  const {
+          scenes,
+          currentScene,
+          currentSceneIndex,
+          goToScene,
+          setScenes,
+      } = useVirtualTour(initialScenes)
+  const [previewMode, setPreviewMode] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -88,7 +103,7 @@ export default function StaffReviewDetailPage() {
 
         const [listingData, feedbacks, images] = await Promise.all([
           getListingDetails(listingId),
-          getFeedbackByListing("c3456789-3333-4ef8-bb6d-6bb9bd380a33"),
+          getFeedbackByListing(listingId),
           //getReviewHistory(listingId),
           getListingImages(listingId),
           //getListingVideos(listingId),
@@ -152,7 +167,23 @@ export default function StaffReviewDetailPage() {
 
     return () => clearTimeout(autoSave)
   }, [staffNotes, listingId, saving])
-
+  const loadTour = async () => {
+    setLoading(true)
+    try {
+      const tour = await getVirtualTour(listingId)
+      setInitialScenes(tour.scenes)
+      setScenes(tour.scenes)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+  useEffect(() => {
+  if (listingId) {
+    loadTour();
+  }
+}, []);
   const allRequiredChecked = checklist
     .filter((item) => item.required)
     .every((item) => item.checked)
@@ -173,7 +204,7 @@ export default function StaffReviewDetailPage() {
   const handleApprove = async () => {
     try {
       setSaving(true)
-      //await approveListing(listingId, staffNotes, checklist)
+      await approveListing(listingId, staffNotes, feedbackToSeller, checklist)
       toast.success("Listing approved successfully")
 
       navigate("/staff")
@@ -284,7 +315,7 @@ export default function StaffReviewDetailPage() {
                 images={listing.images}
                 coverImageIndex={listing.images.findIndex((img) => img.isCover)}
               />
-              <TourEditorPage/>
+
               <PropertyHeader listing={listing} isOwner={false} />
 
               <PropertySpecs listing={listing} />
@@ -332,9 +363,9 @@ export default function StaffReviewDetailPage() {
                 <SellerContactInfo
                   seller={{
                     id: listing.seller.id,
-                    name: listing.seller.name || "Unknown Seller",
+                    name: listing.seller.name || "John",
                     email: listing.seller.email || "No email",
-                    phone: undefined,
+                    phone: "0909106528",
                     joinedDate: undefined,
                     totalListings: undefined,
                   }}
@@ -350,6 +381,23 @@ export default function StaffReviewDetailPage() {
                         checklist={checklist}
                         onCheckChange={handleCheckChange}
                       />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="staff-notes">
+                        Feedback To Seller
+                      </Label>
+                      <Textarea
+                        id="feedback-notes"
+                        placeholder="Add notes about this review..."
+                        value={feedbackToSeller}
+                        onChange={(e) => setfeedbackToSeller(e.target.value)}
+                        rows={4}
+                        className="resize-none"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Auto-saved · Only visible to staff
+                      </p>
                     </div>
 
                     <div className="space-y-2">
@@ -380,6 +428,13 @@ export default function StaffReviewDetailPage() {
               </div>
             </div>
           </div>
+          <br/>
+           <VirtualTourPreview
+                scenes={scenes}
+                initialSceneIndex={currentSceneIndex}
+                onClose={() => setPreviewMode(false)}
+                fullscreen={previewMode}
+              />
         </div>
       </main>
     </div>

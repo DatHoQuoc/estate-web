@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { ClipboardList, UserCheck, CheckCircle, Timer } from "lucide-react"
 import { Navbar } from "@/components/layout/navbar"
@@ -11,7 +11,8 @@ import { FilterDropdown } from "@/components/common/filter-dropdown"
 import { Pagination } from "@/components/common/pagination"
 import { ReviewQueueTable } from "@/components/staff/review-queue-table"
 import { mockStaffUser, mockReviewQueue, mockStaffStats } from "@/lib/mock-data"
-
+import { listSellerListings } from "@/lib/api-client"
+import type { Listing, MergedListing } from "@/lib/types"
 const priorityFilterOptions = [
   { value: "all", label: "All Priority" },
   { value: "high", label: "High" },
@@ -32,10 +33,49 @@ function StaffDashboardContent() {
   const [priorityFilter, setPriorityFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [listings, setListings] = useState<MergedListing[]>([])
+  const [error, setError] = useState<string | null>(null)
 
-  
+  useEffect(() => {
+    loadListings()
+  }, [])
 
-  const filteredListings = mockReviewQueue.filter((listing) => {
+  const loadListings = () => {
+    let isMounted = true
+    setLoading(true)
+    listSellerListings()
+      .then((data) => {
+        if (!isMounted) return
+
+        // Merge real API data with mock data
+        const mergedListings = data.map((apiListing, index) => {
+          const mockListing = mockReviewQueue[index] || mockReviewQueue[0]
+         
+          return {
+            ...mockListing, // All mock attributes
+            id: apiListing.id, // Override with real API data
+            title: apiListing.title,
+            thumbnailUrl: apiListing.featuredImageUrl,
+          }
+        })
+
+        setListings(mergedListings)
+        setError(null)
+      })
+      .catch((err) => {
+        console.error(err)
+        if (isMounted) setError(err.message || "Failed to load listings")
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
+    return () => {
+      isMounted = false
+    }
+  }
+
+  const filteredListings = listings.filter((listing) => {
     const matchesSearch = listing.title
       .toLowerCase()
       .includes(search.toLowerCase())
@@ -47,6 +87,8 @@ function StaffDashboardContent() {
       (statusFilter === "assigned" && listing.assignedTo === mockStaffUser.id)
     return matchesSearch && matchesPriority && matchesStatus
   })
+
+
 
   const handleClaim = (listingId: string) => {
     navigate(`/staff/review/${listingId}`)
