@@ -52,6 +52,7 @@ const statusConfig = {
   },
 }
 
+
 export function AICheckResults({ checks }: AICheckResultsProps) {
   const [expandedCheck, setExpandedCheck] = useState<string | null>(null)
 

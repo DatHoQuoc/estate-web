@@ -14,11 +14,15 @@ import MapDiscoveryPage from "@app/discover/map/page"
 import BuyerListingDetailPage from "@app/discover/listings/[id]/page"
 import AssistantPage from "@app/discover/assistant/page"
 import ConnectPage from "@app/discover/connect/page"
+import EditListingPage from '@app/seller/listings/[id]/edit/edit-listing'
+import TourEditorPage from '@app/seller/listings/[id]/edit/tour-editor'
+import { Toaster } from "sonner"
 
 function App() {
   return (
     <BrowserRouter>
       <RootLayout>
+        <Toaster position="top-right" />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/discover" element={<BuyerDiscoveryHomePage />} />

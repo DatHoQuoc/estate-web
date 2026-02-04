@@ -1,6 +1,6 @@
 import type { Listing, Country, Province, Ward } from "@/lib/types"
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080"
+const API_BASE = import.meta.env.VITE_API_BASE_LISTING || "http://localhost:8080"
 
 interface ApiListingResponse {
   listingId: string
@@ -28,7 +28,7 @@ interface ApiListingResponse {
   buildingName?: string
   latitude?: number
   longitude?: number
-  featuredImageUrl?: string
+  featuredImageUrl: string
   viewCount?: number
   saveCount?: number
   contactCount?: number
@@ -37,6 +37,13 @@ interface ApiListingResponse {
   submittedAt?: string
   publishedAt?: string
   expiredAt?: string
+  amenities?: Array<{
+    amenityId: string
+    amenityName: string
+    amenityCategory: string
+    iconUrl: string
+  }>
+  imageUrls: string[]
 }
 
 export interface CreateListingPayload {
@@ -79,6 +86,24 @@ export interface POIResponse {
   latitude: number;
   longitude: number;
   createdAt: string; // OffsetDateTime arrives as an ISO string
+}
+
+export interface ReviewHistoryItem {
+  reviewId: string
+  action: 'approved' | 'rejected' | 'edit_requested'
+  staffId: string
+  staffName: string
+  timestamp: string
+  notes: string
+  feedback?: string
+  reason?: string
+}
+
+export interface ChecklistItem {
+  id: string
+  label: string
+  checked: boolean
+  required: boolean
 }
 
 export enum DocumentType {
@@ -231,20 +256,26 @@ function mapApiListing(listing: ApiListingResponse): Listing {
       lat: listing.latitude ?? 0,
       lng: listing.longitude ?? 0,
     },
-    images: listing.featuredImageUrl
-      ? [
-          {
-            id: "featured",
-            url: listing.featuredImageUrl,
-            thumbnailUrl: listing.featuredImageUrl,
-            alt: listing.title,
-            isCover: true,
-            order: 0,
-          },
-        ]
-      : [],
+    images: (listing.imageUrls || []).map((url, index) => {
+      const idMatch = url.match(/\/images\/([^.?]+)/);
+      const id = idMatch ? idMatch[1] : `img-${index}`;
+      
+      return {
+        id: id,
+        url: url,
+        thumbnailUrl: url,
+        alt: `${listing.title} - ${index + 1}`,
+        isCover: url === listing.featuredImageUrl || (index === 0 && !listing.featuredImageUrl),
+        order: index,
+      };
+    }) ,
     videos: [],
-    amenities: [],
+    amenities: listing.amenities?.map(a => ({
+      amenityId: a.amenityId,
+      amenityName: a.amenityName,
+      amenityCategory: a.amenityCategory,
+      iconUrl: a.iconUrl,
+    })) || [],
     listingType: "",
     mediaType: "photos_only",
     areaSqm: 0,
@@ -265,6 +296,7 @@ function mapApiListing(listing: ApiListingResponse): Listing {
     floor: listing.floorNumber,
     direction: undefined,
     legalStatus: undefined,
+    featuredImageUrl: listing.featuredImageUrl ?? undefined
   }
 }
 
@@ -275,6 +307,7 @@ export async function listSellerListings(): Promise<Listing[]> {
   const items = data.content || data.data || data.items || []
   return items.map(mapApiListing)
 }
+
 
 export async function getListingDetails(id: string): Promise<Listing> {
   const listing = await fetchJson<ApiListingResponse>(`${API_BASE}/api/v1/seller/listings/${id}`)
@@ -507,6 +540,78 @@ export async function getVirtualTour(listingId: string): Promise<VirtualTourResp
     `${API_BASE}/api/v1/listings/${listingId}/tours`,
     { method: "GET" }
   );
+}
+
+
+export async function getStaffListingDetails(listingId: string): Promise<Listing> {
+  const listing = await fetchJson<ApiListingResponse>(`${API_BASE}/api/v1/staff/listings/${listingId}`)
+  return mapApiListing(listing)
+}
+
+export async function approveListing(
+  listingId: string, 
+  staffNotesInternal: string,
+  feedbackToSeller: string, 
+  checklist: ChecklistItem[]
+): Promise<void> {
+  const checklistMap = checklist.reduce((acc, item) => {
+    acc[item.label] = item.checked;
+    return acc;
+  }, {} as Record<string, boolean>);
+  await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/approve`, {
+    method: "POST",
+    body: JSON.stringify({ staffNotesInternal, feedbackToSeller, checklist: checklistMap }),
+  })
+}
+
+export async function requestEditListing(
+  listingId: string,
+  feedback: string,
+  staffNotes: string,
+  issues: string[]
+): Promise<void> {
+  await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/request-edit`, {
+    method: "POST",
+    body: JSON.stringify({ feedback, staffNotes, issues }),
+  })
+}
+
+export async function rejectListing(
+  listingId: string,
+  reason: string,
+  feedback: string,
+  staffNotes: string
+): Promise<void> {
+  await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ reason, feedback, staffNotes }),
+  })
+}
+
+export async function getReviewHistory(listingId: string): Promise<ReviewHistoryItem[]> {
+  return fetchJson<ReviewHistoryItem[]>(`${API_BASE}/api/v1/staff/listings/${listingId}/review-history`)
+}
+
+export async function saveStaffNotes(listingId: string, notes: string): Promise<void> {
+  // await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/notes`, {
+  //   method: "PUT",
+  //   body: JSON.stringify({ notes }),
+  // })
+}
+
+export async function updateChecklist(listingId: string, checklist: ChecklistItem[]): Promise<void> {
+  // await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/checklist`, {
+  //   method: "PUT",
+  //   body: JSON.stringify({ checklist }),
+  // })
+}
+
+export async function getPendingReviewListings(): Promise<Listing[]> {
+  const data = await fetchJson<{ content?: ApiListingResponse[]; data?: ApiListingResponse[]; items?: ApiListingResponse[] }>(
+    `${API_BASE}/api/v1/staff/listings/pending`
+  )
+  const items = data.content || data.data || data.items || []
+  return items.map(mapApiListing)
 }
 
 
