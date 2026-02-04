@@ -8,13 +8,11 @@ import FeedbackPage from "@app/seller/listings/[id]/feedback/page"
 import StaffDashboardPage from "@app/staff/page"
 import StaffReviewDetailPage from "@app/staff/review/[id]/page"
 import EditListingPage from "@app/seller/listings/[id]/edit/edit-listing"
-import TourEditorPage from "@app/seller/listings/[id]/edit/tour-editor"
 import BuyerDiscoveryHomePage from "@app/discover/page"
 import MapDiscoveryPage from "@app/discover/map/page"
 import BuyerListingDetailPage from "@app/discover/listings/[id]/page"
 import AssistantPage from "@app/discover/assistant/page"
 import ConnectPage from "@app/discover/connect/page"
-import EditListingPage from '@app/seller/listings/[id]/edit/edit-listing'
 import TourEditorPage from '@app/seller/listings/[id]/edit/tour-editor'
 import { Toaster } from "sonner"
 
