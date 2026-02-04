@@ -1,6 +1,6 @@
 import type { Listing, Country, Province, Ward } from "@/lib/types"
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080"
+const API_BASE = import.meta.env.VITE_API_BASE_LISTING || "http://localhost:8080"
 
 interface ApiListingResponse {
   listingId: string

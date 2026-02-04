@@ -1,5 +1,5 @@
 import {FeedbackResponse} from "@/lib/report-service-type"
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8083"
+const API_BASE = import.meta.env.VITE_API_BASE_REPORTING || "http://localhost:8083"
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
