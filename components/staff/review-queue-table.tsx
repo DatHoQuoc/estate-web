@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PriorityBadge } from "@/components/common/status-badge"
 import { cn } from "@/lib/utils"
 import type { ReviewListing } from "@/lib/types"
+import Img from "../common/Img"
 
 interface ReviewQueueTableProps {
   listings: ReviewListing[]
@@ -184,7 +185,7 @@ export function ReviewQueueTable({
                   <div className="flex items-center gap-3">
                     <div className="relative h-12 w-16 rounded overflow-hidden bg-muted flex-shrink-0">
                       {listing.thumbnailUrl ? (
-                        <img
+                        <Img
                           src={listing.thumbnailUrl || "/placeholder.svg"}
                           alt={listing.title}
                           className="object-cover w-full h-full"
@@ -199,7 +200,7 @@ export function ReviewQueueTable({
                       <p className="font-medium text-sm truncate max-w-[200px]">
                         {listing.title}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground capitalize">
                         {listing.propertyType} - {formatPrice(listing.price)}
                       </p>
                     </div>
