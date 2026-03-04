@@ -25,46 +25,11 @@ import { Layout } from "@app/credit/components/Layout";
 function App() {
   return (
     <BrowserRouter>
-      <RootLayout>
-        <Toaster position="top-right" />
-
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/discover" element={<BuyerDiscoveryHomePage />} />
-          <Route path="/discover/map" element={<MapDiscoveryPage />} />
-          <Route
-            path="/discover/listings/:id"
-            element={<BuyerListingDetailPage />}
-          />
-          <Route path="/discover/assistant" element={<AssistantPage />} />
-          <Route path="/discover/connect" element={<ConnectPage />} />
-
-          <Route path="/seller" element={<SellerDashboardPage />} />
-          <Route path="/seller/create" element={<CreateListingPage />} />
-          <Route path="/seller/listings/:id" element={<ListingDetailPage />} />
-          <Route
-            path="/seller/listings/:id/feedback"
-            element={<FeedbackPage />}
-          />
-          <Route
-            path="/seller/listings/:id/tour/edit"
-            element={<TourEditorPage />}
-          />
-          <Route
-            path="/seller/listings/:id/edit"
-            element={<EditListingPage />}
-          />
-
-          <Route path="/staff" element={<StaffDashboardPage />} />
-          <Route path="/staff/review/:id" element={<StaffReviewDetailPage />} />
-
-          <Route path="*" element={<HomePage />} />
-        </Routes>
-      </RootLayout>
       <CreditProvider>
-        <RootLayout>
-          <Toaster position="top-right" />
-          <Routes>
+        <Toaster position="top-right" />
+        <Routes>
+
+          <Route element={<RootLayout><Outlet /></RootLayout>}>
             <Route path="/" element={<HomePage />} />
             <Route path="/discover" element={<BuyerDiscoveryHomePage />} />
             <Route path="/discover/map" element={<MapDiscoveryPage />} />
@@ -74,24 +39,23 @@ function App() {
             <Route path="/seller" element={<SellerDashboardPage />} />
             <Route path="/seller/create" element={<CreateListingPage />} />
             <Route path="/seller/listings/:id" element={<ListingDetailPage />} />
-            <Route
-              path="/seller/listings/:id/feedback"
-              element={<FeedbackPage />}
-            />
-            <Route path="/staff" element={<StaffDashboardPage />} />
-            <Route path="/staff/review/:id" element={<StaffReviewDetailPage />} />
+            <Route path="/seller/listings/:id/feedback" element={<FeedbackPage />} />
             <Route path="/seller/listings/:id/edit" element={<EditListingPage />} />
             <Route path="/seller/listings/:id/tour/edit" element={<TourEditorPage />} />
-            <Route path="/credit" element={<Layout><Outlet /></Layout>}>
-              <Route index element={<CreditDashboard />} />
-              <Route path="history" element={<TransactionHistory />} />
-              <Route path="simulate/chat" element={<SimulateAiChat />} />
-              <Route path="simulate/post" element={<SimulateNewPost />} />
-            </Route>
+            <Route path="/staff" element={<StaffDashboardPage />} />
+            <Route path="/staff/review/:id" element={<StaffReviewDetailPage />} />
+          </Route>
 
-            <Route path="*" element={<HomePage />} />
-          </Routes>
-        </RootLayout>
+
+          <Route path="/credit" element={<Layout><Outlet /></Layout>}>
+            <Route index element={<CreditDashboard />} />
+            <Route path="history" element={<TransactionHistory />} />
+            <Route path="simulate/chat" element={<SimulateAiChat />} />
+            <Route path="simulate/post" element={<SimulateNewPost />} />
+          </Route>
+
+          <Route path="*" element={<HomePage />} />
+        </Routes>
       </CreditProvider>
     </BrowserRouter>
   );
