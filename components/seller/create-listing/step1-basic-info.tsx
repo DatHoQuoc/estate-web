@@ -1,27 +1,32 @@
-"use client"
+"use client";
 
-import { useFormContext } from "react-hook-form"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { useFormContext } from "react-hook-form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Minus, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import type { Listing, Country, Province, Ward } from "@/lib/types"
-import { useState, useEffect } from "react"
-import { getCountries, getProvinces, getWards, CreateListingPayload } from "@/lib/api-client"
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Minus, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { Listing, Country, Province, Ward } from "@/lib/types";
+import { useState, useEffect } from "react";
+import {
+  getCountries,
+  getProvinces,
+  getWards,
+  CreateListingPayload,
+} from "@/lib/api-client";
 
 interface Step1BasicInfoProps {
-  data: CreateListingPayload
-  onChange: (field: string, value: string | number) => void
+  data: CreateListingPayload;
+  onChange: (field: string, value: string | number) => void;
 }
 
 const propertyTypes = [
@@ -31,53 +36,51 @@ const propertyTypes = [
   { value: "land", label: "Land" },
   { value: "office", label: "Office" },
   { value: "commercial", label: "Commercial" },
-]
+];
 
 export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
-  const [countries, setCountries] = useState<Country[]>([])
-  const [provinces, setProvinces] = useState<Province[]>([])
-  const [wards, setWards] = useState<Ward[]>([])
-
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
 
   //Get api
   useEffect(() => {
-    getCountries().then(setCountries).catch(console.error)
-  }, [])
+    getCountries().then(setCountries).catch(console.error);
+  }, []);
 
   useEffect(() => {
     if (data.countryId) {
-      getProvinces(data.countryId).then(setProvinces).catch(console.error)
+      getProvinces(data.countryId).then(setProvinces).catch(console.error);
     } else {
-      setProvinces([])
+      setProvinces([]);
     }
-  }, [data.countryId])
+  }, [data.countryId]);
 
   useEffect(() => {
     if (data.provinceId) {
-      getWards(data.provinceId).then(setWards).catch(console.error)
+      getWards(data.provinceId).then(setWards).catch(console.error);
     } else {
-      setWards([])
+      setWards([]);
     }
-  }, [data.provinceId])
-
+  }, [data.provinceId]);
 
   //handle
   const handleCountryChange = (val: string) => {
-    onChange("countryId", val)
-    onChange("provinceId", "")
-    onChange("wardId", "")
-  }
+    onChange("countryId", val);
+    onChange("provinceId", "");
+    onChange("wardId", "");
+  };
 
   const handleProvinceChange = (val: string) => {
-    onChange("provinceId", val)
-    onChange("wardId", "")
-  }
+    onChange("provinceId", val);
+    onChange("wardId", "");
+  };
 
   const handleCounterChange = (field: string, delta: number) => {
-    const currentValue = data[field as keyof typeof data] as number
-    const newValue = Math.max(0, Math.min(10, currentValue + delta))
-    onChange(field, newValue)
-  }
+    const currentValue = data[field as keyof typeof data] as number;
+    const newValue = Math.max(0, Math.min(10, currentValue + delta));
+    onChange(field, newValue);
+  };
   //Return
 
   return (
@@ -87,7 +90,7 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
           <CardTitle className="text-lg">Property Type</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
+          <div className="space-y-2 *:w-1/2 max-w-100">
             <Label htmlFor="propertyType">Select Property Type</Label>
             <Select
               value={data.propertyType}
@@ -167,8 +170,6 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
               {data.description.length}/5000 characters
             </p>
           </div>
-
-
         </CardContent>
       </Card>
       <Card>
@@ -192,7 +193,9 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
                 id="floor"
                 type="number"
                 value={data.floorNumber}
-                onChange={(e) => onChange("floor", e.target.value ? Number(e.target.value) : 0)}
+                onChange={(e) =>
+                  onChange("floor", e.target.value ? Number(e.target.value) : 0)
+                }
               />
             </div>
           </div>
@@ -236,7 +239,9 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
               </SelectTrigger>
               <SelectContent>
                 {countries.map((c) => (
-                  <SelectItem key={c.countryId} value={c.countryId}>{c.name}</SelectItem>
+                  <SelectItem key={c.countryId} value={c.countryId}>
+                    {c.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -255,7 +260,9 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {provinces.map((p) => (
-                    <SelectItem key={p.provinceId} value={p.provinceId}>{p.name}</SelectItem>
+                    <SelectItem key={p.provinceId} value={p.provinceId}>
+                      {p.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -273,7 +280,9 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {wards.map((w) => (
-                    <SelectItem key={w.wardId} value={w.wardId}>{w.name}</SelectItem>
+                    <SelectItem key={w.wardId} value={w.wardId}>
+                      {w.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -397,5 +406,5 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

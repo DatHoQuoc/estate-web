@@ -1,106 +1,109 @@
-"use client"
+"use client";
 
-import { Suspense, useState, useEffect } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
-import { ClipboardList, UserCheck, CheckCircle, Timer } from "lucide-react"
-import { Navbar } from "@/components/layout/navbar"
-import { StaffSidebar } from "@/components/layout/staff-sidebar"
-import { StatsCard } from "@/components/common/stats-card"
-import { SearchBar } from "@/components/common/search-bar"
-import { FilterDropdown } from "@/components/common/filter-dropdown"
-import { Pagination } from "@/components/common/pagination"
-import { ReviewQueueTable } from "@/components/staff/review-queue-table"
-import { mockStaffUser, mockReviewQueue, mockStaffStats } from "@/lib/mock-data"
-import { listSellerListings } from "@/lib/api-client"
-import type { Listing, MergedListing } from "@/lib/types"
+import { Suspense, useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ClipboardList, UserCheck, CheckCircle, Timer } from "lucide-react";
+import { Navbar } from "@/components/layout/navbar";
+import { StaffSidebar } from "@/components/layout/staff-sidebar";
+import { StatsCard } from "@/components/common/stats-card";
+import { SearchBar } from "@/components/common/search-bar";
+import { FilterDropdown } from "@/components/common/filter-dropdown";
+import { Pagination } from "@/components/common/pagination";
+import { ReviewQueueTable } from "@/components/staff/review-queue-table";
+import {
+  mockStaffUser,
+  mockReviewQueue,
+  mockStaffStats,
+} from "@/lib/mock-data";
+import { listSellerListings } from "@/lib/api-client";
+import type { Listing, MergedListing } from "@/lib/types";
 const priorityFilterOptions = [
   { value: "all", label: "All Priority" },
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
   { value: "low", label: "Low" },
-]
+];
 
 const statusFilterOptions = [
   { value: "all", label: "All Status" },
   { value: "unassigned", label: "Unassigned" },
   { value: "assigned", label: "Assigned to Me" },
-]
+];
 
 function StaffDashboardContent() {
-  const navigate = useNavigate()
-  const searchParams = useSearchParams()
-  const [search, setSearch] = useState("")
-  const [priorityFilter, setPriorityFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [listings, setListings] = useState<MergedListing[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate();
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [listings, setListings] = useState<MergedListing[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadListings()
-  }, [])
+    loadListings();
+  }, []);
 
   const loadListings = () => {
-    let isMounted = true
-    setLoading(true)
+    let isMounted = true;
+    setLoading(true);
     listSellerListings()
       .then((data) => {
-        if (!isMounted) return
+        if (!isMounted) return;
 
         // Merge real API data with mock data
         const mergedListings = data.map((apiListing, index) => {
-          const mockListing = mockReviewQueue[index] || mockReviewQueue[0]
-         
+          const mockListing = mockReviewQueue[index] || mockReviewQueue[0];
+
           return {
             ...mockListing, // All mock attributes
             id: apiListing.id, // Override with real API data
             title: apiListing.title,
             thumbnailUrl: apiListing.featuredImageUrl,
-          }
-        })
+          };
+        });
 
-        setListings(mergedListings)
-        setError(null)
+        setListings(mergedListings);
+        setError(null);
       })
       .catch((err) => {
-        console.error(err)
-        if (isMounted) setError(err.message || "Failed to load listings")
+        console.error(err);
+        if (isMounted) setError(err.message || "Failed to load listings");
       })
       .finally(() => {
-        if (isMounted) setLoading(false)
-      })
+        if (isMounted) setLoading(false);
+      });
     return () => {
-      isMounted = false
-    }
-  }
+      isMounted = false;
+    };
+  };
 
   const filteredListings = listings.filter((listing) => {
     const matchesSearch = listing.title
       .toLowerCase()
-      .includes(search.toLowerCase())
+      .includes(search.toLowerCase());
     const matchesPriority =
-      priorityFilter === "all" || listing.priority === priorityFilter
+      priorityFilter === "all" || listing.priority === priorityFilter;
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "unassigned" && !listing.assignedTo) ||
-      (statusFilter === "assigned" && listing.assignedTo === mockStaffUser.id)
-    return matchesSearch && matchesPriority && matchesStatus
-  })
-
-
+      (statusFilter === "assigned" && listing.assignedTo === mockStaffUser.id);
+    return matchesSearch && matchesPriority && matchesStatus;
+  });
 
   const handleClaim = (listingId: string) => {
-    navigate(`/staff/review/${listingId}`)
-  }
+    navigate(`/staff/review/${listingId}`);
+  };
 
   const handleView = (listingId: string) => {
-    navigate(`/staff/review/${listingId}`)
-  }
+    navigate(`/staff/review/${listingId}`);
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={mockStaffUser} notificationCount={5} />
+
+      <Navbar user={mockStaffUser} notificationCount={5} fixed />
       <StaffSidebar />
 
       <main className="ml-60 pt-16">
@@ -181,7 +184,7 @@ function StaffDashboardContent() {
         </div>
       </main>
     </div>
-  )
+  );
 }
 
 function LoadingFallback() {
@@ -192,7 +195,7 @@ function LoadingFallback() {
         <p className="text-muted-foreground text-sm">Loading...</p>
       </div>
     </div>
-  )
+  );
 }
 
 export default function StaffDashboardPage() {
@@ -200,5 +203,5 @@ export default function StaffDashboardPage() {
     <Suspense fallback={<LoadingFallback />}>
       <StaffDashboardContent />
     </Suspense>
-  )
+  );
 }

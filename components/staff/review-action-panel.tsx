@@ -1,17 +1,11 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { CheckCircle, Edit, XCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { useState } from "react";
+import { CheckCircle, Edit, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -19,13 +13,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 interface ReviewActionPanelProps {
-  onApprove: () => void
-  onRequestEdit: (feedback: string) => void
-  onReject: (reason: string, feedback: string) => void
-  disabled: boolean
+  onApprove: () => void;
+  onRequestEdit: (feedback: string) => void;
+  onReject: (reason: string, feedback: string) => void;
+  disabled: boolean;
 }
 
 const rejectReasons = [
@@ -35,38 +29,33 @@ const rejectReasons = [
   { value: "duplicate-listing", label: "Duplicate listing" },
   { value: "policy-violation", label: "Policy violation" },
   { value: "other", label: "Other" },
-]
+];
 
-export function ReviewActionPanel({
-  onApprove,
-  onRequestEdit,
-  onReject,
-  disabled,
-}: ReviewActionPanelProps) {
-  const [showEditDialog, setShowEditDialog] = useState(false)
-  const [showRejectDialog, setShowRejectDialog] = useState(false)
-  const [editFeedback, setEditFeedback] = useState("")
-  const [rejectReason, setRejectReason] = useState("")
-  const [rejectFeedback, setRejectFeedback] = useState("")
+export function ReviewActionPanel({ onApprove, onRequestEdit, onReject, disabled }: ReviewActionPanelProps) {
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [editFeedback, setEditFeedback] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectFeedback, setRejectFeedback] = useState("");
 
   const handleRequestEdit = () => {
-    onRequestEdit(editFeedback)
-    setShowEditDialog(false)
-    setEditFeedback("")
-  }
+    onRequestEdit(editFeedback);
+    setShowEditDialog(false);
+    setEditFeedback("");
+  };
 
   const handleReject = () => {
-    onReject(rejectReason, rejectFeedback)
-    setShowRejectDialog(false)
-    setRejectReason("")
-    setRejectFeedback("")
-  }
+    onReject(rejectReason, rejectFeedback);
+    setShowRejectDialog(false);
+    setRejectReason("");
+    setRejectFeedback("");
+  };
 
   return (
     <>
       <div className="space-y-3 pt-4 border-t border-border">
         <Button
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-foreground"
           onClick={onApprove}
           disabled={disabled}
         >
@@ -98,9 +87,7 @@ export function ReviewActionPanel({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Request Edit</DialogTitle>
-            <DialogDescription>
-              Provide feedback to the seller about what needs to be changed.
-            </DialogDescription>
+            <DialogDescription>Provide feedback to the seller about what needs to be changed.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -121,7 +108,7 @@ export function ReviewActionPanel({
             <Button
               onClick={handleRequestEdit}
               disabled={!editFeedback.trim()}
-              className="bg-amber-500 hover:bg-amber-600 text-white"
+              className="bg-amber-500 hover:bg-amber-600 text-foreground"
             >
               Send Request
             </Button>
@@ -134,9 +121,7 @@ export function ReviewActionPanel({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Listing</DialogTitle>
-            <DialogDescription>
-              This action will reject the listing and notify the seller.
-            </DialogDescription>
+            <DialogDescription>This action will reject the listing and notify the seller.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -169,16 +154,12 @@ export function ReviewActionPanel({
             <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReject}
-              disabled={!rejectReason}
-            >
+            <Button variant="destructive" onClick={handleReject} disabled={!rejectReason}>
               Reject Listing
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

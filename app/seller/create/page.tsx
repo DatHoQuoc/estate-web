@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Save } from "lucide-react"
-import { Navbar } from "@/components/layout/navbar"
-import { FormStepper } from "@/components/common/form-stepper"
-import { Step1BasicInfo } from "@/components/seller/create-listing/step1-basic-info"
-import { Step2Details } from "@/components/seller/create-listing/step2-details"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Save } from "lucide-react";
+import { Navbar } from "@/components/layout/navbar";
+import { FormStepper } from "@/components/common/form-stepper";
+import { Step1BasicInfo } from "@/components/seller/create-listing/step1-basic-info";
+import { Step2Details } from "@/components/seller/create-listing/step2-details";
 import {
   Step3MediaUpload,
   UploadedFileImage,
   UploadedFile360,
   UploadedFileVideo,
-} from "@/components/seller/create-listing/step3-media-upload"
-import { Step4Review } from "@/components/seller/create-listing/step4-review"
-import { Button } from "@/components/ui/button"
-import { mockUser } from "@/lib/mock-data"
+} from "@/components/seller/create-listing/step3-media-upload";
+import { Step4Review } from "@/components/seller/create-listing/step4-review";
+import { Button } from "@/components/ui/button";
+import { mockUser } from "@/lib/mock-data";
 import {
   createListingDraft,
   updateListingAmenities,
@@ -23,68 +23,68 @@ import {
   DocumentType,
   UploadDocumentRequest,
   // ── Tour APIs ── (you implement these in api-client)
-  createVirtualTour,       // (listingId) => Promise<{ tourId: string }>
-  addTourScene,            // (listingId, file, sceneData) => Promise<{ sceneId: string }>
-  deleteTourScene,         // (listingId, sceneId) => Promise<void>
-  reorderTourScenes,       // (listingId, sceneIds: string[]) => Promise<void>
-  publishTour,             // (listingId) => Promise<void>
+  createVirtualTour, // (listingId) => Promise<{ tourId: string }>
+  addTourScene, // (listingId, file, sceneData) => Promise<{ sceneId: string }>
+  deleteTourScene, // (listingId, sceneId) => Promise<void>
+  reorderTourScenes, // (listingId, sceneIds: string[]) => Promise<void>
+  publishTour, // (listingId) => Promise<void>
   // ── Image / Video upload APIs ── (you implement these in api-client)
-  uploadListingImages,     // (listingId, files: File[]) => Promise<{ urls: string[] }>
-  uploadListingVideos,     // (listingId, files: File[]) => Promise<{ videoIds: string[], urls: string[] }>
+  uploadListingImages, // (listingId, files: File[]) => Promise<{ urls: string[] }>
+  uploadListingVideos, // (listingId, files: File[]) => Promise<{ videoIds: string[], urls: string[] }>
   publishListing,
-} from "@/lib/api-client"
+} from "@/lib/api-client";
 
-import {MediaType} from "@/components/seller/create-listing/step3-media-upload"
+import { MediaType } from "@/components/seller/create-listing/step3-media-upload";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface FormData {
-  id: string
+  id: string;
 
   // Step 1
-  propertyType: string
-  transactionType: string
-  title: string
-  description: string
-  address: string
-  countryId: string
-  provinceId: string
-  wardId: string
-  price: number
-  priceCurrency: string
-  negotiable: boolean
-  area: number
-  bedrooms: number
-  bathrooms: number
+  propertyType: string;
+  transactionType: string;
+  title: string;
+  description: string;
+  address: string;
+  countryId: string;
+  provinceId: string;
+  wardId: string;
+  price: number;
+  priceCurrency: string;
+  negotiable: boolean;
+  area: number;
+  bedrooms: number;
+  bathrooms: number;
 
   // Step 2
-  latitude: number
-  longitude: number
-  width?: number
-  length?: number
-  frontage?: number
-  roadWidth?: number
-  yearBuilt: number | null
-  floor: number | null
-  direction: string
-  legalStatus: string
-  furnitureStatus: string
-  amenities: string[]
-  features: string[]
+  latitude: number;
+  longitude: number;
+  width?: number;
+  length?: number;
+  frontage?: number;
+  roadWidth?: number;
+  yearBuilt: number | null;
+  floor: number | null;
+  direction: string;
+  legalStatus: string;
+  furnitureStatus: string;
+  amenities: string[];
+  features: string[];
 
   // Step 3 — uses the exported types from Step3MediaUpload
-  mediaType: MediaType
-  images: UploadedFileImage[]
-  images360: UploadedFile360[]
-  videos: UploadedFileVideo[]
+  mediaType: MediaType;
+  images: UploadedFileImage[];
+  images360: UploadedFile360[];
+  videos: UploadedFileVideo[];
 
   // Step 2 documents
   documents: {
-    id: string
-    name: string
-    url: string
-    size: number
-    file?: File
-  }[]
+    id: string;
+    name: string;
+    url: string;
+    size: number;
+    file?: File;
+  }[];
 }
 
 // What Step3's onChange sends as its second argument
@@ -92,7 +92,7 @@ type MediaValue =
   | UploadedFileImage[]
   | UploadedFile360[]
   | UploadedFileVideo[]
-  | MediaType
+  | MediaType;
 
 // ─── Initial State ───────────────────────────────────────────────────────────
 
@@ -132,7 +132,7 @@ const initialFormData: FormData = {
   images360: [],
   videos: [],
   documents: [],
-}
+};
 
 // ─── Steps ────────────────────────────────────────────────────────────────────
 
@@ -141,26 +141,26 @@ const steps = [
   { id: 2, label: "Details" },
   { id: 3, label: "Media" },
   { id: 4, label: "Review" },
-]
+];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CreateListingPage() {
-  const navigate = useNavigate()
-  const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<FormData>(initialFormData)
-  const [termsAccepted, setTermsAccepted] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // tourId is the container returned by POST /tours.
   // Kept separate so we know whether to create or reuse.
-  const [tourId, setTourId] = useState<string | null>(null)
+  const [tourId, setTourId] = useState<string | null>(null);
 
   // When a 360° item that already has a sceneId is deleted in Step 3,
   // we can't call DELETE immediately (user might undo).
   // Instead we queue the sceneId here and flush on save.
-  const [deletedSceneIds, setDeletedSceneIds] = useState<string[]>([])
+  const [deletedSceneIds, setDeletedSceneIds] = useState<string[]>([]);
 
   // ── Stepper ──
   const stepsWithStatus = steps.map((step) => ({
@@ -171,79 +171,79 @@ export default function CreateListingPage() {
         : step.id === currentStep
           ? ("current" as const)
           : ("upcoming" as const),
-  }))
+  }));
 
   // ── Generic handler (Step 1, Step 2) ──
   const handleFieldChange = (field: string, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   // ── Media handler (Step 3) ──
   // Intercepts 360° deletions to capture sceneIds before they leave state.
   const handleMediaChange = (
     field: "mediaType" | "images" | "images360" | "videos",
-    value: MediaValue
+    value: MediaValue,
   ) => {
     // Only intercept 360 deletions for sceneId tracking
     if (field === "images360") {
-      const incoming = value as UploadedFile360[]
-      const currentIds = new Set(incoming.map((item) => item.id))
+      const incoming = value as UploadedFile360[];
+      const currentIds = new Set(incoming.map((item) => item.id));
 
       formData.images360.forEach((item) => {
         if (!currentIds.has(item.id) && item.sceneId) {
-          setDeletedSceneIds((prev) => [...prev, item.sceneId!])
+          setDeletedSceneIds((prev) => [...prev, item.sceneId!]);
         }
-      })
+      });
     }
 
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   // ── Navigation ──
   const handleNext = () => {
-    if (currentStep < steps.length) setCurrentStep(currentStep + 1)
-  }
+    if (currentStep < steps.length) setCurrentStep(currentStep + 1);
+  };
 
   const handlePrevious = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1)
-  }
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
 
   // ── Validation ──
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return true
-        // TODO: uncomment when ready
-        // return (
-        //   formData.propertyType &&
-        //   formData.title.length >= 10 &&
-        //   formData.description.length >= 50 &&
-        //   formData.address &&
-        //   formData.price > 0 &&
-        //   formData.area > 0
-        // )
+        return true;
+      // TODO: uncomment when ready
+      // return (
+      //   formData.propertyType &&
+      //   formData.title.length >= 10 &&
+      //   formData.description.length >= 50 &&
+      //   formData.address &&
+      //   formData.price > 0 &&
+      //   formData.area > 0
+      // )
       case 2:
-        return true
+        return true;
       case 3:
-        return formData.images.length >= 5
+        return formData.images.length >= 5;
       case 4:
-        return termsAccepted
+        return termsAccepted;
       default:
-        return false
+        return false;
     }
-  }
+  };
 
   // ── Save Draft ────────────────────────────────────────────────────────────
   // Each case handles exactly one step's persistence.
 
   const handleSaveDraft = async () => {
     if (!formData.id && currentStep > 1) {
-      setError("Please save Step 1 first to create a draft.")
-      return
+      setError("Please save Step 1 first to create a draft.");
+      return;
     }
 
-    setSubmitting(true)
-    setError(null)
+    setSubmitting(true);
+    setError(null);
 
     try {
       switch (currentStep) {
@@ -265,152 +265,169 @@ export default function CreateListingPage() {
             countryId: formData.countryId,
             provinceId: formData.provinceId,
             wardId: formData.wardId,
-          })
-          setFormData((prev) => ({ ...prev, id: newListing.id }))
-          break
+          });
+          setFormData((prev) => ({ ...prev, id: newListing.id }));
+          break;
         }
 
         // ── Case 2: amenities + documents ──
         case 2: {
           const newFiles = formData.documents
             .filter((doc) => doc.file)
-            .map((doc) => doc.file as File)
+            .map((doc) => doc.file as File);
 
-          const documentRequests: UploadDocumentRequest[] = newFiles.map(() => ({
-            documentType: DocumentType.OWNERSHIP_CERTIFICATE,
-            documentNumber: "DOC-001-UPDATED",
-            issueDate: new Date().toISOString(),
-            issuingAuthority: "Local Authority",
-            expiryDate: new Date().toISOString(),
-          }))
+          const documentRequests: UploadDocumentRequest[] = newFiles.map(
+            () => ({
+              documentType: DocumentType.OWNERSHIP_CERTIFICATE,
+              documentNumber: "DOC-001-UPDATED",
+              issueDate: new Date().toISOString(),
+              issuingAuthority: "Local Authority",
+              expiryDate: new Date().toISOString(),
+            }),
+          );
 
-          await Promise.all([
-            updateListingAmenities(formData.id, formData.amenities),
-            newFiles.length > 0
-              ? uploadListingDocuments(formData.id, newFiles, documentRequests)
-              : Promise.resolve(),
-          ])
-          break
+          try {
+            await Promise.all([
+              updateListingAmenities(formData.id, formData.amenities),
+              newFiles.length > 0
+                ? uploadListingDocuments(
+                    formData.id,
+                    newFiles,
+                    documentRequests,
+                  )
+                : Promise.resolve(),
+            ]);
+          } catch (err) {
+            // console.log(err);
+          }
+
+          break;
         }
 
         // ── Case 3: images + virtual tour + videos ──
         case 3: {
-          await saveMediaStep(formData.id)
-          break
+          await saveMediaStep(formData.id);
+          break;
         }
 
         // ── Case 4: nothing extra — publish is in handleSubmit ──
         case 4: {
-          break
+          break;
         }
 
         default:
-          console.warn("No save handler for this step")
+          console.warn("No save handler for this step");
       }
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Failed to save draft"
-      setError(message)
+        err instanceof Error ? err.message : "Failed to save draft";
+      setError(message);
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   // ── Media persistence (extracted so handleSubmit can reuse it) ──
   const saveMediaStep = async (listingId: string) => {
     // ── a) Upload regular images ──
-    const newImages = formData.images.filter((img) => img.file && !img.url)
+    const newImages = formData.images.filter((img) => img.file && !img.url);
     if (newImages.length > 0) {
-      const files = newImages.map((img) => img.file as File)
-      const { urls } = await uploadListingImages(listingId, files)
+      const files = newImages.map((img) => img.file as File);
+      const { urls } = await uploadListingImages(listingId, files);
 
-      let urlIndex = 0
+      let urlIndex = 0;
       setFormData((prev) => ({
         ...prev,
         images: prev.images.map((img) => {
           if (img.file && !img.url) {
-            return { ...img, url: urls[urlIndex++] }
+            return { ...img, url: urls[urlIndex++] };
           }
-          return img
+          return img;
         }),
-      }))
+      }));
     }
 
     // ── b, c, d, f) Tour logic — only if seller opted in ──
     if (formData.mediaType === "photos_and_tour") {
       // b) Create tour container if needed
-      const new360 = formData.images360.filter((img) => img.file && !img.sceneId)
+      const new360 = formData.images360.filter(
+        (img) => img.file && !img.sceneId,
+      );
       if (new360.length > 0 && !tourId) {
-        const { tourId: newTourId } = await createVirtualTour(listingId)
-        setTourId(newTourId)
+        const { tourId: newTourId } = await createVirtualTour(listingId);
+        setTourId(newTourId);
       }
 
       // c) Upload each new scene
       if (new360.length > 0) {
-        const updatedScenes = [...formData.images360]
+        const updatedScenes = [...formData.images360];
 
         for (const scene of new360) {
-          const { sceneId } = await addTourScene(listingId, scene.file as File, {
-            sceneName: scene.sceneName,
-            positionX: 0.0,
-            positionY: 0.0,
-            positionZ: 0.0,
-            hotspotsJson: [],
-          })
+          const { sceneId } = await addTourScene(
+            listingId,
+            scene.file as File,
+            {
+              sceneName: scene.sceneName,
+              positionX: 0.0,
+              positionY: 0.0,
+              positionZ: 0.0,
+              hotspotsJson: [],
+            },
+          );
 
-          const idx = updatedScenes.findIndex((s) => s.id === scene.id)
+          const idx = updatedScenes.findIndex((s) => s.id === scene.id);
           if (idx !== -1) {
-            updatedScenes[idx] = { ...updatedScenes[idx], sceneId }
+            updatedScenes[idx] = { ...updatedScenes[idx], sceneId };
           }
         }
 
-        setFormData((prev) => ({ ...prev, images360: updatedScenes }))
+        setFormData((prev) => ({ ...prev, images360: updatedScenes }));
       }
 
       // d) Flush deleted scenes
       if (deletedSceneIds.length > 0) {
         await Promise.all(
-          deletedSceneIds.map((sceneId) => deleteTourScene(listingId, sceneId))
-        )
-        setDeletedSceneIds([])
+          deletedSceneIds.map((sceneId) => deleteTourScene(listingId, sceneId)),
+        );
+        setDeletedSceneIds([]);
       }
 
       // f) Reorder scenes
       const allSceneIds = formData.images360
         .filter((img) => img.sceneId)
-        .map((img) => img.sceneId as string)
+        .map((img) => img.sceneId as string);
 
       if (allSceneIds.length > 1) {
-        await reorderTourScenes(listingId, allSceneIds)
+        await reorderTourScenes(listingId, allSceneIds);
       }
     }
 
     // ── e) Upload videos — always runs regardless of mediaType ──
-    const newVideos = formData.videos.filter((v) => v.file && !v.videoId)
+    const newVideos = formData.videos.filter((v) => v.file && !v.videoId);
     if (newVideos.length > 0) {
-      const files = newVideos.map((v) => v.file as File)
-      const { videoIds, urls } = await uploadListingVideos(listingId, files)
+      const files = newVideos.map((v) => v.file as File);
+      const { videoIds, urls } = await uploadListingVideos(listingId, files);
 
-      let vidIndex = 0
+      let vidIndex = 0;
       setFormData((prev) => ({
         ...prev,
         videos: prev.videos.map((v) => {
           if (v.file && !v.videoId) {
-            return { ...v, videoId: videoIds[vidIndex], url: urls[vidIndex++] }
+            return { ...v, videoId: videoIds[vidIndex], url: urls[vidIndex++] };
           }
-          return v
+          return v;
         }),
-      }))
+      }));
     }
-  }
+  };
 
   // ── Final Submit ──
   const handleSubmit = async () => {
-    setSubmitting(true)
-    setError(null)
+    setSubmitting(true);
+    setError(null);
 
     try {
-      let listingId = formData.id
+      let listingId = formData.id;
 
       // If somehow no draft exists, create one first
       if (!listingId) {
@@ -427,29 +444,29 @@ export default function CreateListingPage() {
           floorNumber: formData.floor ?? undefined,
           yearBuilt: formData.yearBuilt ?? undefined,
           streetAddress: formData.address,
-        })
-        listingId = newListing.id
-        setFormData((prev) => ({ ...prev, id: listingId }))
+        });
+        listingId = newListing.id;
+        setFormData((prev) => ({ ...prev, id: listingId }));
       }
 
       // Make sure all media is persisted before publishing
-      await saveMediaStep(listingId)
+      await saveMediaStep(listingId);
 
       // Publish the virtual tour if one exists
       if (formData.mediaType === "photos_and_tour" && tourId) {
-        await publishTour(listingId)
+        await publishTour(listingId);
       }
 
-      await publishListing(listingId)
-      navigate("/seller")
+      await publishListing(listingId);
+      navigate("/seller");
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Failed to submit listing"
-      setError(message)
+        err instanceof Error ? err.message : "Failed to submit listing";
+      setError(message);
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -483,9 +500,7 @@ export default function CreateListingPage() {
             <FormStepper
               steps={stepsWithStatus}
               currentStep={currentStep}
-              onStepClick={(step) =>
-                step < currentStep && setCurrentStep(step)
-              }
+              onStepClick={(step) => step < currentStep && setCurrentStep(step)}
             />
           </div>
 
@@ -583,11 +598,9 @@ export default function CreateListingPage() {
             </div>
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive mt-4">{error}</p>
-          )}
+          {error && <p className="text-sm text-destructive mt-4">{error}</p>}
         </div>
       </main>
     </div>
-  )
+  );
 }

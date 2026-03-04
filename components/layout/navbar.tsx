@@ -1,68 +1,67 @@
-"use client"
+"use client";
 
-import { Bell, ChevronDown, LogOut, Settings, User as UserIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Bell, ChevronDown, LogOut, MapPinHouse, Settings, User as UserIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import type { User } from "@/lib/types"
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { User } from "@/lib/types";
 
 interface NavbarProps {
-  user: User
-  notificationCount?: number
-  onNotificationClick?: () => void
-  onProfileClick?: () => void
-  onLogout?: () => void
+  user: User;
+  notificationCount?: number;
+  onNotificationClick?: () => void;
+  onProfileClick?: () => void;
+  onLogout?: () => void;
+  fixed?: boolean;
 }
 
-export function Navbar({
-  user,
-  notificationCount = 0,
-  onNotificationClick,
-  onProfileClick,
-  onLogout,
-}: NavbarProps) {
+export function Navbar({ user, notificationCount = 0, onNotificationClick, onProfileClick, onLogout, fixed }: NavbarProps) {
+
+  let className = "z-50 shadow-xs"
+
+  if (fixed) {
+    className += " fixed top-0 left-0 w-screen";
+  }
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b border-border">
-      <div className="flex items-center justify-between h-full px-6">
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">PL</span>
+    <header className={className}>
+      <div className="flex items-center justify-between h-full p-2">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
+            <MapPinHouse className="text-primary-foreground" />
           </div>
-          <span className="font-semibold text-lg text-foreground">PropList</span>
+          <div className="flex justify-center flex-col">
+            <span className="font-semibold text-lg text-foreground">PropList Real Estate</span>
+            <span className="text-xs">Your trusty place for real estate listing</span>
+          </div>
         </div>
 
-        {/* Right Section */}
         <div className="flex items-center gap-4">
-          {/* Notifications */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative"
-            onClick={onNotificationClick}
-          >
+          <Button variant="ghost" size="icon" className="relative" onClick={onNotificationClick}>
             <Bell className="h-5 w-5 text-muted-foreground" />
             {notificationCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full  bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
                 {notificationCount > 9 ? "9+" : notificationCount}
               </span>
             )}
           </Button>
 
-          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 px-2">
+              <Button variant="ghost" className="flex items-center gap-2 px-2 h-auto">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
                   <AvatarFallback>
-                    {user.name.split(" ").map((n) => n[0]).join("")}
+                    {user.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-medium hidden md:block">{user.name}</span>
@@ -93,5 +92,5 @@ export function Navbar({
         </div>
       </div>
     </header>
-  )
+  );
 }

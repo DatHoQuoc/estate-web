@@ -1,96 +1,70 @@
-"use client"
+"use client";
 
-import React, { useState, useCallback } from "react"
-import {
-  Upload,
-  X,
-  Star,
-  GripVertical,
-  ImageIcon,
-  Video,
-  Globe,
-  Info,
-  Check,
-  Lock,
-} from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import React, { useState, useCallback } from "react";
+import { Upload, X, Star, GripVertical, ImageIcon, Video, Globe, Info, Check, Lock } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 // ─── Exported Types ──────────────────────────────────────────────────────────
 
-export type MediaType = "photos_only" | "photos_and_tour"
+export type MediaType = "photos_only" | "photos_and_tour";
 
 export interface UploadedFileImage {
-  id: string
-  file?: File
-  preview: string
-  url?: string
-  uploadProgress: number
-  status: "uploading" | "success" | "error"
-  isCover: boolean
+  id: string;
+  file?: File;
+  preview: string;
+  url?: string;
+  uploadProgress: number;
+  status: "uploading" | "success" | "error";
+  isCover: boolean;
 }
 
 export interface UploadedFile360 {
-  id: string
-  sceneId?: string
-  file?: File
-  preview: string
-  url?: string
-  sceneName: string
-  uploadProgress: number
-  status: "uploading" | "success" | "error"
+  id: string;
+  sceneId?: string;
+  file?: File;
+  preview: string;
+  url?: string;
+  sceneName: string;
+  uploadProgress: number;
+  status: "uploading" | "success" | "error";
 }
 
 export interface UploadedFileVideo {
-  id: string
-  videoId?: string
-  file?: File
-  preview: string
-  url?: string
-  uploadProgress: number
-  status: "uploading" | "success" | "error"
+  id: string;
+  videoId?: string;
+  file?: File;
+  preview: string;
+  url?: string;
+  uploadProgress: number;
+  status: "uploading" | "success" | "error";
 }
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
-type MediaValue =
-  | UploadedFileImage[]
-  | UploadedFile360[]
-  | UploadedFileVideo[]
-  | MediaType
+type MediaValue = UploadedFileImage[] | UploadedFile360[] | UploadedFileVideo[] | MediaType;
 
 interface Step3MediaUploadProps {
   data: {
-    mediaType: MediaType
-    images: UploadedFileImage[]
-    images360: UploadedFile360[]
-    videos: UploadedFileVideo[]
-  }
-  onChange: (
-    field: "mediaType" | "images" | "images360" | "videos",
-    value: MediaValue
-  ) => void
+    mediaType: MediaType;
+    images: UploadedFileImage[];
+    images360: UploadedFile360[];
+    videos: UploadedFileVideo[];
+  };
+  onChange: (field: "mediaType" | "images" | "images360" | "videos", value: MediaValue) => void;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatFileSize(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 // ─── Sub-Components ──────────────────────────────────────────────────────────
 
-function SectionBadge({
-  count,
-  max,
-  label,
-}: {
-  count: number
-  max: number
-  label: string
-}) {
-  const pct = (count / max) * 100
+function SectionBadge({ count, max, label }: { count: number; max: number; label: string }) {
+  const pct = (count / max) * 100;
   return (
     <div className="flex items-center gap-3">
       <span className="text-xs text-muted-foreground">
@@ -100,17 +74,17 @@ function SectionBadge({
         <div
           className={cn(
             "h-full rounded-full transition-all duration-300",
-            count >= max ? "bg-emerald-500" : "bg-primary"
+            count >= max ? "bg-emerald-500" : "bg-primary",
           )}
           style={{ width: `${Math.min(pct, 100)}%` }}
         />
       </div>
     </div>
-  )
+  );
 }
 
 function InfoTooltip({ text }: { text: string }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
   return (
     <div className="relative inline-block">
       <button
@@ -128,7 +102,7 @@ function InfoTooltip({ text }: { text: string }) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function SceneSyncBadge({ sceneId }: { sceneId?: string }) {
@@ -138,69 +112,63 @@ function SceneSyncBadge({ sceneId }: { sceneId?: string }) {
         <Check className="h-2.5 w-2.5" />
         Saved
       </span>
-    )
+    );
   }
-  return (
-    <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
-      Pending
-    </span>
-  )
+  return <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Pending</span>;
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
-  const [isDragging, setIsDragging] = useState(false)
+  const [isDragging, setIsDragging] = useState(false);
 
   // ── Derived ──
-  const tourHasSavedScenes = data.images360.some((img) => img.sceneId)
-  const photosOnlyLocked = tourHasSavedScenes
-  const image360Maxed = data.images360.length >= 5
-  const videoMaxed = data.videos.length >= 3
-  const imageMaxed = data.images.length >= 50
+  const tourHasSavedScenes = data.images360.some((img) => img.sceneId);
+  const photosOnlyLocked = tourHasSavedScenes;
+  const image360Maxed = data.images360.length >= 5;
+  const videoMaxed = data.videos.length >= 3;
+  const imageMaxed = data.images.length >= 50;
 
-  const pendingImages = data.images.filter((img) => img.file && !img.url).length
-  const pending360 = data.images360.filter((img) => img.file && !img.sceneId).length
-  const pendingVideos = data.videos.filter((v) => v.file && !v.videoId).length
-  const hasPending = pendingImages > 0 || pending360 > 0 || pendingVideos > 0
+  const pendingImages = data.images.filter((img) => img.file && !img.url).length;
+  const pending360 = data.images360.filter((img) => img.file && !img.sceneId).length;
+  const pendingVideos = data.videos.filter((v) => v.file && !v.videoId).length;
+  const hasPending = pendingImages > 0 || pending360 > 0 || pendingVideos > 0;
 
   // ── Media type selection ──
   const handleMediaTypeChange = (type: MediaType) => {
-    if (type === "photos_only" && photosOnlyLocked) return
+    if (type === "photos_only" && photosOnlyLocked) return;
     if (type === "photos_only" && data.images360.length > 0) {
-      onChange("images360", [] as UploadedFile360[])
+      onChange("images360", [] as UploadedFile360[]);
     }
-    onChange("mediaType", type)
-  }
+    onChange("mediaType", type);
+  };
 
   // ── Image drag ──
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }, [])
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }, [])
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
-      e.preventDefault()
-      setIsDragging(false)
-      const files = Array.from(e.dataTransfer.files).filter((f) =>
-        f.type.startsWith("image/")
-      )
-      handleImages(files)
+      e.preventDefault();
+      setIsDragging(false);
+      const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+      handleImages(files);
     },
-    [data.images]
-  )
+    [data.images],
+  );
 
   // ── Image handlers ──
   const handleImageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleImages(Array.from(e.target.files || []))
-    e.target.value = ""
-  }
+    handleImages(Array.from(e.target.files || []));
+    e.target.value = "";
+  };
 
   const handleImages = (files: File[]) => {
     const next: UploadedFileImage[] = files.map((file, i) => ({
@@ -210,30 +178,28 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
       uploadProgress: 100,
       status: "success" as const,
       isCover: data.images.length === 0 && i === 0,
-    }))
-    onChange("images", [...data.images, ...next])
-  }
+    }));
+    onChange("images", [...data.images, ...next]);
+  };
 
   const handleDeleteImage = (id: string) => {
-    const next = data.images.filter((img) => img.id !== id)
+    const next = data.images.filter((img) => img.id !== id);
     if (next.length > 0 && !next.some((img) => img.isCover)) {
-      next[0] = { ...next[0], isCover: true }
+      next[0] = { ...next[0], isCover: true };
     }
-    onChange("images", next)
-  }
+    onChange("images", next);
+  };
 
   const handleSetCover = (id: string) => {
     onChange(
       "images",
-      data.images.map((img) => ({ ...img, isCover: img.id === id }))
-    )
-  }
+      data.images.map((img) => ({ ...img, isCover: img.id === id })),
+    );
+  };
 
   // ── 360° handlers ──
   const handle360Input = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).filter((f) =>
-      f.type.startsWith("image/")
-    )
+    const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith("image/"));
     const next: UploadedFile360[] = files.map((file, i) => ({
       id: `360-${Date.now()}-${i}`,
       file,
@@ -241,55 +207,50 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
       sceneName: `Scene ${data.images360.length + i + 1}`,
       uploadProgress: 100,
       status: "success" as const,
-    }))
-    onChange("images360", [...data.images360, ...next])
-    e.target.value = ""
-  }
+    }));
+    onChange("images360", [...data.images360, ...next]);
+    e.target.value = "";
+  };
 
   const handleDelete360 = (id: string) => {
     onChange(
       "images360",
-      data.images360.filter((img) => img.id !== id)
-    )
-  }
+      data.images360.filter((img) => img.id !== id),
+    );
+  };
 
   const handleSceneNameChange = (id: string, name: string) => {
     onChange(
       "images360",
-      data.images360.map((img) =>
-        img.id === id ? { ...img, sceneName: name } : img
-      )
-    )
-  }
+      data.images360.map((img) => (img.id === id ? { ...img, sceneName: name } : img)),
+    );
+  };
 
   // ── Video handlers ──
   const handleVideoInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).filter((f) =>
-      f.type.startsWith("video/")
-    )
+    const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith("video/"));
     const next: UploadedFileVideo[] = files.map((file, i) => ({
       id: `vid-${Date.now()}-${i}`,
       file,
       preview: URL.createObjectURL(file),
       uploadProgress: 100,
       status: "success" as const,
-    }))
-    onChange("videos", [...data.videos, ...next])
-    e.target.value = ""
-  }
+    }));
+    onChange("videos", [...data.videos, ...next]);
+    e.target.value = "";
+  };
 
   const handleDeleteVideo = (id: string) => {
     onChange(
       "videos",
-      data.videos.filter((v) => v.id !== id)
-    )
-  }
+      data.videos.filter((v) => v.id !== id),
+    );
+  };
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-5">
-
       {/* ── Pending nudge ── */}
       {hasPending && (
         <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
@@ -321,34 +282,23 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
               isDragging
                 ? "border-primary bg-primary/5 scale-[1.01]"
                 : "border-muted-foreground/30 hover:border-primary/60 bg-muted/30",
-              imageMaxed && "opacity-40 pointer-events-none"
+              imageMaxed && "opacity-40 pointer-events-none",
             )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={() =>
-              !imageMaxed && document.getElementById("image-upload")?.click()
-            }
+            onClick={() => !imageMaxed && document.getElementById("image-upload")?.click()}
           >
             <div
               className={cn(
                 "mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors",
-                isDragging ? "bg-primary/20" : "bg-muted"
+                isDragging ? "bg-primary/20" : "bg-muted",
               )}
             >
-              <Upload
-                className={cn(
-                  "h-5 w-5",
-                  isDragging ? "text-primary" : "text-muted-foreground"
-                )}
-              />
+              <Upload className={cn("h-5 w-5", isDragging ? "text-primary" : "text-muted-foreground")} />
             </div>
-            <p className="text-sm font-medium text-foreground">
-              Drag & drop images here, or click to browse
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              JPG, PNG — max 10 MB per file · Minimum 5 required
-            </p>
+            <p className="text-sm font-medium text-foreground">Drag & drop images here, or click to browse</p>
+            <p className="text-xs text-muted-foreground mt-1">JPG, PNG — max 10 MB per file · Minimum 5 required</p>
             <input
               type="file"
               id="image-upload"
@@ -378,14 +328,10 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                     "relative group aspect-[4/3] rounded-lg overflow-hidden border-2 transition-all",
                     image.isCover
                       ? "border-primary shadow-sm shadow-primary/20"
-                      : "border-transparent hover:border-muted-foreground/40"
+                      : "border-transparent hover:border-muted-foreground/40",
                   )}
                 >
-                  <img
-                    src={image.preview || "/placeholder.svg"}
-                    alt="Preview"
-                    className="object-cover w-full h-full"
-                  />
+                  <img src={image.preview || "/placeholder.svg"} alt="Preview" className="object-cover w-full h-full" />
 
                   {/* Cover badge */}
                   {image.isCover && (
@@ -397,7 +343,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
 
                   {/* Saved badge */}
                   {image.url && (
-                    <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-foreground text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
                       <Check className="h-2.5 w-2.5" />
                     </div>
                   )}
@@ -417,7 +363,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                     <button
                       type="button"
                       onClick={() => handleDeleteImage(image.id)}
-                      className="bg-red-500/90 hover:bg-red-600 text-white h-7 w-7 rounded-lg flex items-center justify-center transition-colors shadow-sm"
+                      className="bg-red-500/90 hover:bg-red-600 text-foreground h-7 w-7 rounded-lg flex items-center justify-center transition-colors shadow-sm"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -425,7 +371,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
 
                   {/* Drag handle */}
                   <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-60 transition-opacity">
-                    <GripVertical className="h-4 w-4 text-white drop-shadow" />
+                    <GripVertical className="h-4 w-4 text-foreground drop-shadow" />
                   </div>
                 </div>
               ))}
@@ -457,7 +403,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                 data.mediaType === "photos_only"
                   ? "border-primary bg-primary/5 shadow-sm"
                   : "border-muted bg-white hover:border-muted-foreground/40",
-                photosOnlyLocked && "opacity-50 cursor-not-allowed"
+                photosOnlyLocked && "opacity-50 cursor-not-allowed",
               )}
             >
               {/* Lock icon */}
@@ -480,9 +426,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                 </div>
               </div>
               <p className="text-sm font-semibold text-foreground">Photos Only</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Standard 2D property photos
-              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Standard 2D property photos</p>
             </button>
 
             {/* Option B — Photos + Virtual Tour */}
@@ -493,13 +437,13 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                 "relative w-full text-left rounded-xl border-2 p-4 transition-all duration-200",
                 data.mediaType === "photos_and_tour"
                   ? "border-emerald-500 bg-emerald-50 shadow-sm"
-                  : "border-muted bg-white hover:border-muted-foreground/40"
+                  : "border-muted bg-white hover:border-muted-foreground/40",
               )}
             >
               {/* Selected checkmark */}
               {data.mediaType === "photos_and_tour" && (
                 <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                  <Check className="h-3 w-3 text-white" />
+                  <Check className="h-3 w-3 text-foreground" />
                 </div>
               )}
 
@@ -511,12 +455,8 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                   <Globe className="h-3 w-3 text-emerald-600" />
                 </div>
               </div>
-              <p className="text-sm font-semibold text-foreground">
-                Photos + Virtual Tour
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Add interactive 360° panorama scenes
-              </p>
+              <p className="text-sm font-semibold text-foreground">Photos + Virtual Tour</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Add interactive 360° panorama scenes</p>
             </button>
           </div>
 
@@ -542,9 +482,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                 Virtual Tour Scenes
                 <InfoTooltip text="Upload equirectangular 360° panorama images (2:1 ratio). Name each scene so buyers know which room they are viewing." />
               </CardTitle>
-              <span className="text-xs text-muted-foreground">
-                Up to 5 scenes
-              </span>
+              <span className="text-xs text-muted-foreground">Up to 5 scenes</span>
             </div>
           </CardHeader>
 
@@ -554,19 +492,14 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
               className={cn(
                 "border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 cursor-pointer",
                 "border-emerald-300/50 hover:border-emerald-500/70 bg-emerald-50/40",
-                image360Maxed && "opacity-40 pointer-events-none"
+                image360Maxed && "opacity-40 pointer-events-none",
               )}
-              onClick={() =>
-                !image360Maxed &&
-                document.getElementById("upload-360")?.click()
-              }
+              onClick={() => !image360Maxed && document.getElementById("upload-360")?.click()}
             >
               <div className="mx-auto w-11 h-11 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
                 <Globe className="h-5 w-5 text-emerald-600" />
               </div>
-              <p className="text-sm font-medium text-foreground">
-                Upload 360° panorama images
-              </p>
+              <p className="text-sm font-medium text-foreground">Upload 360° panorama images</p>
               <p className="text-xs text-muted-foreground mt-1">
                 Equirectangular format (2:1 ratio) · JPG, PNG · max 50 MB each
               </p>
@@ -591,9 +524,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                   >
                     {/* Order number */}
                     <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-emerald-700">
-                        {idx + 1}
-                      </span>
+                      <span className="text-xs font-bold text-emerald-700">{idx + 1}</span>
                     </div>
 
                     {/* Thumbnail */}
@@ -611,9 +542,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                         <input
                           type="text"
                           value={img.sceneName}
-                          onChange={(e) =>
-                            handleSceneNameChange(img.id, e.target.value)
-                          }
+                          onChange={(e) => handleSceneNameChange(img.id, e.target.value)}
                           placeholder="Scene name"
                           className="text-sm font-medium bg-transparent border-b border-transparent hover:border-muted focus:border-emerald-500 focus:outline-none transition-colors w-full max-w-[160px] py-0.5"
                         />
@@ -654,9 +583,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
               <Video className="h-4.5 w-4.5 text-blue-600" />
               Property Videos
             </CardTitle>
-            <span className="text-xs text-muted-foreground">
-              Optional · up to 3
-            </span>
+            <span className="text-xs text-muted-foreground">Optional · up to 3</span>
           </div>
         </CardHeader>
 
@@ -666,21 +593,15 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
             className={cn(
               "border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 cursor-pointer",
               "border-blue-300/50 hover:border-blue-500/70 bg-blue-50/40",
-              videoMaxed && "opacity-40 pointer-events-none"
+              videoMaxed && "opacity-40 pointer-events-none",
             )}
-            onClick={() =>
-              !videoMaxed && document.getElementById("video-upload")?.click()
-            }
+            onClick={() => !videoMaxed && document.getElementById("video-upload")?.click()}
           >
             <div className="mx-auto w-11 h-11 rounded-full bg-blue-100 flex items-center justify-center mb-3">
               <Video className="h-5 w-5 text-blue-600" />
             </div>
-            <p className="text-sm font-medium text-foreground">
-              Upload video walkthroughs
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              MP4 format · max 100 MB per file
-            </p>
+            <p className="text-sm font-medium text-foreground">Upload video walkthroughs</p>
+            <p className="text-xs text-muted-foreground mt-1">MP4 format · max 100 MB per file</p>
             <input
               type="file"
               id="video-upload"
@@ -717,11 +638,7 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {video.file
-                        ? formatFileSize(video.file.size)
-                        : video.url
-                          ? "Uploaded"
-                          : "Pending"}
+                      {video.file ? formatFileSize(video.file.size) : video.url ? "Uploaded" : "Pending"}
                     </p>
                   </div>
 
@@ -739,5 +656,5 @@ export function Step3MediaUpload({ data, onChange }: Step3MediaUploadProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
