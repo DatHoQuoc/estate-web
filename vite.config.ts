@@ -20,7 +20,15 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: env.VITE_SERVER_PORT,
-      allowedHosts: [env.VITE_TRUSTED_DOMAIN]
+      allowedHosts: [env.VITE_TRUSTED_DOMAIN],
+
+      proxy: {
+        "/payos": {
+          target: "https://api-merchant.payos.vn",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/payos/, "")
+        }
+      }
     },
   }
 })
