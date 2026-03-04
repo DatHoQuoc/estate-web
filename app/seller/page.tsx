@@ -1,25 +1,40 @@
-"use client"
+"use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { Home, CheckCircle, Clock, XCircle, Plus, Eye, Edit, Trash2, Upload, RotateCcw } from "lucide-react"
-import { Navbar } from "@/components/layout/navbar"
-import { SellerSidebar } from "@/components/layout/seller-sidebar"
-import { StatsCard } from "@/components/common/stats-card"
-import { SearchBar } from "@/components/common/search-bar"
-import { FilterDropdown } from "@/components/common/filter-dropdown"
-import { Pagination } from "@/components/common/pagination"
-import { Button } from "@/components/ui/button"
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Home,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  Upload,
+  RotateCcw,
+} from "lucide-react";
+import { Navbar } from "@/components/layout/navbar";
+import { SellerSidebar } from "@/components/layout/seller-sidebar";
+import { StatsCard } from "@/components/common/stats-card";
+import { SearchBar } from "@/components/common/search-bar";
+import { FilterDropdown } from "@/components/common/filter-dropdown";
+import { Pagination } from "@/components/common/pagination";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { mockUser } from "@/lib/mock-data"
-import { listSellerListings, submitListingForReview, unpublishListing } from "@/lib/api-client"
-import type { Listing } from "@/lib/types"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { mockUser } from "@/lib/mock-data";
+import {
+  listSellerListings,
+  submitListingForReview,
+  unpublishListing,
+} from "@/lib/api-client";
+import type { Listing } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 const statusFilterOptions = [
   { value: "all", label: "All Status" },
@@ -27,116 +42,142 @@ const statusFilterOptions = [
   { value: "pending_staff_review", label: "Pending Review" },
   { value: "ai_rejected", label: "AI Rejected" },
   { value: "draft", label: "Draft" },
-]
+];
 
 function SellerDashboardContent() {
-  const navigate = useNavigate()
-  const [listings, setListings] = useState<Listing[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const navigate = useNavigate();
+
+  const [listings, setListings] = useState<Listing[]>([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    loadListings()
-  }, [])
+    loadListings();
+  }, []);
 
   const loadListings = () => {
-    let isMounted = true
-    setLoading(true)
+    let isMounted = true;
+    setLoading(true);
     listSellerListings()
       .then((data) => {
-        if (!isMounted) return
-        setListings(data)
-        setError(null)
+        if (!isMounted) return;
+        setListings(data);
+        setError(null);
       })
       .catch((err) => {
-        console.error(err)
-        if (isMounted) setError(err.message || "Failed to load listings")
+        console.error(err);
+        if (isMounted) setError(err.message || "Failed to load listings");
       })
       .finally(() => {
-        if (isMounted) setLoading(false)
-      })
+        if (isMounted) setLoading(false);
+      });
     return () => {
-      isMounted = false
-    }
-  }
+      isMounted = false;
+    };
+  };
 
   const filteredListings = useMemo(() => {
     return listings.filter((listing) => {
       const matchesSearch = listing.title
         .toLowerCase()
-        .includes(search.toLowerCase())
+        .includes(search.toLowerCase());
       const matchesStatus =
-        statusFilter === "all" || listing.status === statusFilter
-      return matchesSearch && matchesStatus
-    })
-  }, [listings, search, statusFilter])
+        statusFilter === "all" || listing.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [listings, search, statusFilter]);
 
   const listingStats = useMemo(() => {
-    const total = listings.length
-    const published = listings.filter((l) => l.status === "published").length
-    const pending = listings.filter((l) => l.status?.includes("pending")).length
+    const total = listings.length;
+    const published = listings.filter((l) => l.status === "published").length;
+    const pending = listings.filter((l) =>
+      l.status?.includes("pending"),
+    ).length;
     const rejected = listings.filter(
-      (l) => l.status?.includes("rejected") || l.status === "ai_rejected"
-    ).length
-    return { total, published, pending, rejected }
-  }, [listings])
+      (l) => l.status?.includes("rejected") || l.status === "ai_rejected",
+    ).length;
+    return { total, published, pending, rejected };
+  }, [listings]);
 
   const handleView = (id: string) => {
-    navigate(`/seller/listings/${id}`)
-  }
+    navigate(`/seller/listings/${id}`);
+  };
 
   const handleEdit = (id: string) => {
-    navigate(`/seller/listings/${id}/edit`)
-  }
+    navigate(`/seller/listings/${id}/edit`);
+  };
 
   const handleDelete = (id: string) => {
-    console.log("Delete listing:", id)
-  }
+    console.log("Delete listing:", id);
+  };
 
   const handlePublish = async (id: string) => {
-    setActionLoading(id)
+    setActionLoading(id);
     try {
-      await submitListingForReview(id)
-      await loadListings()
+      await submitListingForReview(id);
+      await loadListings();
     } catch (err) {
-      console.error(err)
+      console.error(err);
     } finally {
-      setActionLoading(null)
+      setActionLoading(null);
     }
-  }
+  };
 
   const handleUnpublish = async (id: string) => {
-    setActionLoading(id)
+    setActionLoading(id);
     try {
-      await unpublishListing(id)
-      await loadListings()
+      await unpublishListing(id);
+      await loadListings();
     } catch (err) {
-      console.error(err)
+      console.error(err);
     } finally {
-      setActionLoading(null)
+      setActionLoading(null);
     }
-  }
+  };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { bg: string; text: string; label: string }> = {
-      published: { bg: "bg-emerald-100", text: "text-emerald-700", label: "Published" },
-      pending_review: { bg: "bg-amber-100", text: "text-amber-700", label: "Pending Review" },
+    const variants: Record<
+      string,
+      { bg: string; text: string; label: string }
+    > = {
+      published: {
+        bg: "bg-emerald-100",
+        text: "text-emerald-700",
+        label: "Published",
+      },
+      pending_review: {
+        bg: "bg-amber-100",
+        text: "text-amber-700",
+        label: "Pending Review",
+      },
       draft: { bg: "bg-gray-100", text: "text-gray-700", label: "Draft" },
-      ai_rejected: { bg: "bg-red-100", text: "text-red-700", label: "AI Rejected" },
+      ai_rejected: {
+        bg: "bg-red-100",
+        text: "text-red-700",
+        label: "AI Rejected",
+      },
       rejected: { bg: "bg-red-100", text: "text-red-700", label: "Rejected" },
-    }
+    };
 
-    const variant = variants[status] || variants.draft
+    const variant = variants[status] || variants.draft;
     return (
-      <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", variant.bg, variant.text)}>
+      <span
+        className={cn(
+          "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+          variant.bg,
+          variant.text,
+        )}
+      >
         {variant.label}
       </span>
-    )
-  }
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -147,7 +188,9 @@ function SellerDashboardContent() {
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">My Listings</h1>
+              <h1 className="text-2xl font-bold text-foreground">
+                My Listings
+              </h1>
               <p className="text-muted-foreground text-sm mt-1">
                 Manage and track all your property listings
               </p>
@@ -228,19 +271,25 @@ function SellerDashboardContent() {
               <tbody className="divide-y divide-border">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-muted-foreground">
+                    <td
+                      colSpan={5}
+                      className="px-6 py-8 text-center text-sm text-muted-foreground"
+                    >
                       Loading listings...
                     </td>
                   </tr>
                 ) : filteredListings.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-muted-foreground">
+                    <td
+                      colSpan={5}
+                      className="px-6 py-8 text-center text-sm text-muted-foreground"
+                    >
                       No listings found
                     </td>
                   </tr>
                 ) : (
                   filteredListings.map((listing) => {
-                    const isLoading = actionLoading === listing.id
+                    const isLoading = actionLoading === listing.id;
                     return (
                       <tr key={listing.id} className="hover:bg-muted/30">
                         <td className="px-6 py-4">
@@ -255,7 +304,8 @@ function SellerDashboardContent() {
                                 {listing.title}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {listing.location.district}, {listing.location.city}
+                                {listing.location.district},{" "}
+                                {listing.location.city}
                               </p>
                             </div>
                           </div>
@@ -272,35 +322,50 @@ function SellerDashboardContent() {
                         <td className="px-6 py-4 text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" disabled={isLoading}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={isLoading}
+                              >
                                 {isLoading ? "..." : "Actions"}
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleView(listing.id)}>
+                              <DropdownMenuItem
+                                onClick={() => handleView(listing.id)}
+                              >
                                 <Eye className="mr-2 h-4 w-4" />
                                 View
                               </DropdownMenuItem>
 
                               {listing.status.toLowerCase() === "draft" && (
                                 <>
-                                  <DropdownMenuItem onClick={() => handleEdit(listing.id)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleEdit(listing.id)}
+                                  >
                                     <Edit className="mr-2 h-4 w-4" />
                                     Edit
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handlePublish(listing.id)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handlePublish(listing.id)}
+                                  >
                                     <Upload className="mr-2 h-4 w-4" />
                                     Submit for Review
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDelete(listing.id)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDelete(listing.id)}
+                                  >
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Delete
                                   </DropdownMenuItem>
                                 </>
                               )}
 
-                              {listing.status.toLowerCase() === "pending_review" && (
-                                <DropdownMenuItem onClick={() => handleUnpublish(listing.id)}>
+                              {listing.status.toLowerCase() ===
+                                "pending_review" && (
+                                <DropdownMenuItem
+                                  onClick={() => handleUnpublish(listing.id)}
+                                >
                                   <RotateCcw className="mr-2 h-4 w-4" />
                                   Withdraw
                                 </DropdownMenuItem>
@@ -308,27 +373,40 @@ function SellerDashboardContent() {
 
                               {listing.status.toLowerCase() === "draft" && (
                                 <>
-                                  <DropdownMenuItem onClick={() => handleUnpublish(listing.id)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleUnpublish(listing.id)}
+                                  >
                                     <RotateCcw className="mr-2 h-4 w-4" />
                                     Unpublish
                                   </DropdownMenuItem>
                                   {/* listing.mediaType === "photos_and_tour" &&  */}
-                                  {(
-                                    <DropdownMenuItem onClick={() => navigate(`/seller/listings/${listing.id}/tour/edit`)}>
+                                  {
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        navigate(
+                                          `/seller/listings/${listing.id}/tour/edit`,
+                                        )
+                                      }
+                                    >
                                       <Edit className="mr-2 h-4 w-4" />
                                       Edit Tour
                                     </DropdownMenuItem>
-                                  )}
+                                  }
                                 </>
                               )}
 
-                              {(listing.status.toLowerCase() === "rejected" || listing.status === "staff_rejected") && (
+                              {(listing.status.toLowerCase() === "rejected" ||
+                                listing.status === "staff_rejected") && (
                                 <>
-                                  <DropdownMenuItem onClick={() => handleEdit(listing.id)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleEdit(listing.id)}
+                                  >
                                     <Edit className="mr-2 h-4 w-4" />
                                     Edit & Resubmit
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDelete(listing.id)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDelete(listing.id)}
+                                  >
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Delete
                                   </DropdownMenuItem>
@@ -338,7 +416,7 @@ function SellerDashboardContent() {
                           </DropdownMenu>
                         </td>
                       </tr>
-                    )
+                    );
                   })
                 )}
               </tbody>
@@ -361,7 +439,7 @@ function SellerDashboardContent() {
         </div>
       </main>
     </div>
-  )
+  );
 }
 
 function LoadingFallback() {
@@ -372,7 +450,7 @@ function LoadingFallback() {
         <p className="text-muted-foreground text-sm">Loading...</p>
       </div>
     </div>
-  )
+  );
 }
 
 export default function SellerDashboardPage() {
@@ -380,5 +458,5 @@ export default function SellerDashboardPage() {
     <Suspense fallback={<LoadingFallback />}>
       <SellerDashboardContent />
     </Suspense>
-  )
+  );
 }

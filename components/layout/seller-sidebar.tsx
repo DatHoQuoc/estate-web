@@ -1,26 +1,7 @@
-"use client"
+import { LayoutDashboard, Home, Plus, BarChart3, Settings, MessageSquare } from "lucide-react";
+import { AppSidebar } from "../common/app-sidebar";
 
-import React from "react"
-
-import { NavLink, useLocation } from "react-router-dom"
-import {
-  LayoutDashboard,
-  Home,
-  Plus,
-  BarChart3,
-  Settings,
-  MessageSquare,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-
-interface MenuItem {
-  id: string
-  label: string
-  icon: React.ReactNode
-  path: string
-}
-
-const menuItems: MenuItem[] = [
+const menuItems = [
   {
     id: "dashboard",
     label: "Dashboard",
@@ -57,36 +38,8 @@ const menuItems: MenuItem[] = [
     icon: <Settings className="h-5 w-5" />,
     path: "/seller/settings",
   },
-]
+];
 
 export function SellerSidebar() {
-  const location = useLocation()
-
-  return (
-    <aside className="fixed left-0 top-16 w-60 h-[calc(100vh-4rem)] bg-card border-r border-border">
-      <nav className="p-4 space-y-1">
-        {menuItems.map((item) => {
-          const isActive =
-            location.pathname === item.path ||
-            (item.path !== "/seller" && location.pathname.startsWith(item.path))
-
-          return (
-            <NavLink
-              key={item.id}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              )}
-            >
-              {item.icon}
-              {item.label}
-            </NavLink>
-          )
-        })}
-      </nav>
-    </aside>
-  )
+  return <AppSidebar items={menuItems} />;
 }

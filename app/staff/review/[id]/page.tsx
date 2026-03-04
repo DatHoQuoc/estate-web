@@ -1,34 +1,30 @@
 // pages/staff/review-detail.tsx
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, Download } from "lucide-react"
-import { Navbar } from "@/components/layout/navbar"
-import { ImageGallery } from "@/components/common/image-gallery"
-import {
-  PropertyHeader,
-  PropertySpecs,
-  AmenitiesList,
-} from "@/components/seller/property-details"
-import { AICheckResults } from "@/components/staff/ai-check-results"
-import { ReviewChecklist } from "@/components/staff/review-checklist"
-import { ReviewActionPanel } from "@/components/staff/review-action-panel"
-import { ReviewHistoryTimeline } from "@/components/staff/review-history-timeline"
-import { SellerContactInfo } from "@/components/staff/seller-contact-info"
-import { ReviewTimer } from "@/components/staff/review-timer"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "sonner"
-import { mockStaffUser, mockChecklist } from "@/lib/mock-data"
-import type { ChecklistItem, AICheck, Listing } from "@/lib/types"
-import type { FeedbackResponse } from "@/lib/report-service-type"
-import type { ReviewHistoryItem, TourSceneResponse } from "@/lib/api-client"
-import { getFeedbackByListing } from "@/lib/report-service-api"
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Download } from "lucide-react";
+import { Navbar } from "@/components/layout/navbar";
+import { ImageGallery } from "@/components/common/image-gallery";
+import { PropertyHeader, PropertySpecs, AmenitiesList } from "@/components/seller/property-details";
+import { AICheckResults } from "@/components/staff/ai-check-results";
+import { ReviewChecklist } from "@/components/staff/review-checklist";
+import { ReviewActionPanel } from "@/components/staff/review-action-panel";
+import { ReviewHistoryTimeline } from "@/components/staff/review-history-timeline";
+import { SellerContactInfo } from "@/components/staff/seller-contact-info";
+import { ReviewTimer } from "@/components/staff/review-timer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { mockStaffUser, mockChecklist } from "@/lib/mock-data";
+import type { ChecklistItem, AICheck, Listing } from "@/lib/types";
+import type { FeedbackResponse } from "@/lib/report-service-type";
+import type { ReviewHistoryItem, TourSceneResponse } from "@/lib/api-client";
+import { getFeedbackByListing } from "@/lib/report-service-api";
 import {
   getListingDetails,
   approveListing,
@@ -38,12 +34,13 @@ import {
   saveStaffNotes,
   updateChecklist,
   getAllListingAmenities,
-} from "@/lib/api-client"
-import { getListingImages, getListingVideos, getVirtualTour } from "@/lib/api-client"
-import { VirtualTourPreview } from '@components/virtual-tour/VirtualTourPreview'
-import { useSearchParams } from "react-router-dom"
-import { VirtualTourEditor } from "@/components/virtual-tour/VirtualTourEditor"
-import { useVirtualTour } from "@/components/virtual-tour/hooks/useVirtualTour"
+} from "@/lib/api-client";
+import { getListingImages, getListingVideos, getVirtualTour } from "@/lib/api-client";
+import { VirtualTourPreview } from "@components/virtual-tour/VirtualTourPreview";
+import { useSearchParams } from "react-router-dom";
+import { VirtualTourEditor } from "@/components/virtual-tour/VirtualTourEditor";
+import { useVirtualTour } from "@/components/virtual-tour/hooks/useVirtualTour";
+import FullPageLoading from "@/components/common/fullpage-loading";
 
 function mapFeedbackToAIChecks(feedbacks: FeedbackResponse[]): AICheck[] {
   const checkTypeMap: Record<string, AICheck["type"]> = {
@@ -51,55 +48,47 @@ function mapFeedbackToAIChecks(feedbacks: FeedbackResponse[]): AICheck[] {
     DUPLICATE: "duplicate",
     PRICE_ANOMALY: "price_anomaly",
     CONTENT_POLICY: "content_policy",
-  }
+  };
 
   const statusMap: Record<string, AICheck["status"]> = {
     APPROVED: "pass",
     REJECTED: "fail",
     PENDING_REVIEW: "warning",
-  }
-
+  };
 
   return feedbacks.map((feedback) => ({
     type: checkTypeMap[feedback.checkType] || "content_policy",
     status: statusMap[feedback.feedbackStatus] || "warning",
     confidence: Math.round(feedback.aiConfidenceScore * 100),
     details:
-      feedback.feedbackItems
-        .map((item) => `${item.errorMessage}\nSuggestion: ${item.suggestion}`)
-        .join("\n\n") || "No details available",
-  }))
+      feedback.feedbackItems.map((item) => `${item.errorMessage}\nSuggestion: ${item.suggestion}`).join("\n\n") ||
+      "No details available",
+  }));
 }
 
 export default function StaffReviewDetailPage() {
-  const params = useParams()
-  const navigate = useNavigate()
+  const params = useParams();
+  const navigate = useNavigate();
 
-  const listingId = params.id as string
+  const listingId = params.id as string;
 
-  const [listing, setListing] = useState<Listing | null>(null)
-  const [checklist, setChecklist] = useState<ChecklistItem[]>(mockChecklist)
-  const [staffNotes, setStaffNotes] = useState("")
-  const [feedbackToSeller, setfeedbackToSeller] = useState("")
-  const [checks, setChecks] = useState<AICheck[]>([])
-  const [reviewHistory, setReviewHistory] = useState<ReviewHistoryItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [searchParams] = useSearchParams()
-  const [initialScenes, setInitialScenes] = useState<TourSceneResponse[]>([])
-  const {
-          scenes,
-          currentScene,
-          currentSceneIndex,
-          goToScene,
-          setScenes,
-      } = useVirtualTour(initialScenes)
-  const [previewMode, setPreviewMode] = useState(false)
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(mockChecklist);
+  const [staffNotes, setStaffNotes] = useState("");
+  const [feedbackToSeller, setfeedbackToSeller] = useState("");
+  const [checks, setChecks] = useState<AICheck[]>([]);
+  const [reviewHistory, setReviewHistory] = useState<ReviewHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [initialScenes, setInitialScenes] = useState<TourSceneResponse[]>([]);
+  const { scenes, currentScene, currentSceneIndex, goToScene, setScenes } = useVirtualTour(initialScenes);
+  const [previewMode, setPreviewMode] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true)
+        setLoading(true);
 
         const [listingData, feedbacks, images] = await Promise.all([
           getListingDetails(listingId),
@@ -107,15 +96,14 @@ export default function StaffReviewDetailPage() {
           //getReviewHistory(listingId),
           getListingImages(listingId),
           //getListingVideos(listingId),
-        ])
+        ]);
 
-        const mappedAmenities = listingData.amenities
-          .map(a => ({
-            amenityId: a.amenityId,
-            amenityName: a.amenityName,
-            amenityCategory: a.amenityCategory,
-            iconUrl: a.iconUrl,
-          }))
+        const mappedAmenities = listingData.amenities.map((a) => ({
+          amenityId: a.amenityId,
+          amenityName: a.amenityName,
+          amenityCategory: a.amenityCategory,
+          iconUrl: a.iconUrl,
+        }));
 
         const mappedImages = images.map((img) => ({
           id: img.imageId,
@@ -124,7 +112,7 @@ export default function StaffReviewDetailPage() {
           alt: listingData.title,
           isCover: img.isCover,
           order: img.displayOrder,
-        }))
+        }));
 
         // const mappedVideos = videos.map((vid) => ({
         //   id: vid.videoId,
@@ -139,119 +127,110 @@ export default function StaffReviewDetailPage() {
           images: mappedImages,
           amenities: mappedAmenities,
           //videos: mappedVideos,
-        })
+        });
 
-        const aiChecks = mapFeedbackToAIChecks(feedbacks)
-        setChecks(aiChecks)
+        const aiChecks = mapFeedbackToAIChecks(feedbacks);
+        setChecks(aiChecks);
         //setReviewHistory(history)
       } catch (error) {
-        console.error("Failed to load data:", error)
-        toast.error("Failed to approve listing")
+        console.error("Failed to load data:", error);
+        toast.error("Failed to approve listing");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    loadData()
-  }, [listingId, toast])
+    };
+    loadData();
+  }, [listingId, toast]);
 
   useEffect(() => {
     const autoSave = setTimeout(async () => {
       if (staffNotes && !saving) {
         try {
-          await saveStaffNotes(listingId, staffNotes)
+          await saveStaffNotes(listingId, staffNotes);
         } catch (error) {
-          console.error("Failed to auto-save notes:", error)
+          console.error("Failed to auto-save notes:", error);
         }
       }
-    }, 2000)
+    }, 2000);
 
-    return () => clearTimeout(autoSave)
-  }, [staffNotes, listingId, saving])
+    return () => clearTimeout(autoSave);
+  }, [staffNotes, listingId, saving]);
   const loadTour = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const tour = await getVirtualTour(listingId)
-      setInitialScenes(tour.scenes)
-      setScenes(tour.scenes)
+      const tour = await getVirtualTour(listingId);
+      setInitialScenes(tour.scenes);
+      setScenes(tour.scenes);
     } catch (err) {
-      console.error(err)
+      console.error(err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   useEffect(() => {
-  if (listingId) {
-    loadTour();
-  }
-}, []);
-  const allRequiredChecked = checklist
-    .filter((item) => item.required)
-    .every((item) => item.checked)
+    if (listingId) {
+      loadTour();
+    }
+  }, []);
+  const allRequiredChecked = checklist.filter((item) => item.required).every((item) => item.checked);
 
   const handleCheckChange = async (id: string, checked: boolean) => {
-    const updatedChecklist = checklist.map((item) =>
-      item.id === id ? { ...item, checked } : item
-    )
-    setChecklist(updatedChecklist)
+    const updatedChecklist = checklist.map((item) => (item.id === id ? { ...item, checked } : item));
+    setChecklist(updatedChecklist);
 
     try {
-      await updateChecklist(listingId, updatedChecklist)
+      await updateChecklist(listingId, updatedChecklist);
     } catch (error) {
-      console.error("Failed to save checklist:", error)
+      console.error("Failed to save checklist:", error);
     }
-  }
+  };
 
   const handleApprove = async () => {
     try {
-      setSaving(true)
-      await approveListing(listingId, staffNotes, feedbackToSeller, checklist)
-      toast.success("Listing approved successfully")
+      setSaving(true);
+      await approveListing(listingId, staffNotes, feedbackToSeller, checklist);
+      toast.success("Listing approved successfully");
 
-      navigate("/staff")
+      navigate("/staff");
     } catch (error) {
-      console.error("Failed to approve:", error)
-      toast.error("Failed to approve listing")
-
+      console.error("Failed to approve:", error);
+      toast.error("Failed to approve listing");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleRequestEdit = async (feedback: string) => {
     try {
-      setSaving(true)
-      const issues = checklist
-        .filter((item) => !item.checked && item.required)
-        .map((item) => item.label)
+      setSaving(true);
+      const issues = checklist.filter((item) => !item.checked && item.required).map((item) => item.label);
 
-      await requestEditListing(listingId, feedback, staffNotes, issues)
-      toast.success("Listing approved successfully")
+      await requestEditListing(listingId, feedback, staffNotes, issues);
+      toast.success("Listing approved successfully");
 
-      navigate("/staff")
+      navigate("/staff");
     } catch (error) {
-      console.error("Failed to request edit:", error)
-      toast.error("Failed to approve listing")
-
+      console.error("Failed to request edit:", error);
+      toast.error("Failed to approve listing");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleReject = async (reason: string, feedback: string) => {
     try {
-      setSaving(true)
-      await rejectListing(listingId, reason, feedback, staffNotes)
-      toast.success("Listing approved successfully")
+      setSaving(true);
+      await rejectListing(listingId, reason, feedback, staffNotes);
+      toast.success("Listing approved successfully");
 
-      navigate("/staff")
+      navigate("/staff");
     } catch (error) {
-      console.error("Failed to reject:", error)
-      toast.error("Failed to approve listing")
-
+      console.error("Failed to reject:", error);
+      toast.error("Failed to approve listing");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleExportReport = () => {
     const report = {
@@ -262,28 +241,21 @@ export default function StaffReviewDetailPage() {
       aiChecks: checks,
       reviewHistory,
       exportedAt: new Date().toISOString(),
-    }
+    };
 
     const blob = new Blob([JSON.stringify(report, null, 2)], {
       type: "application/json",
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `review-report-${listingId}-${Date.now()}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `review-report-${listingId}-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (!listing) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar user={mockStaffUser} />
-        <main className="pt-16 flex items-center justify-center h-screen">
-          <p>Loading...</p>
-        </main>
-      </div>
-    )
+    return <FullPageLoading />;
   }
 
   return (
@@ -293,11 +265,7 @@ export default function StaffReviewDetailPage() {
       <main className="pt-16">
         <div className="max-w-7xl mx-auto py-6 px-4">
           <div className="flex items-center justify-between mb-4">
-            <Button
-              variant="ghost"
-              className="-ml-2"
-              onClick={() => navigate("/staff")}
-            >
+            <Button variant="ghost" className="-ml-2" onClick={() => navigate("/staff")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Review Queue
             </Button>
@@ -311,10 +279,7 @@ export default function StaffReviewDetailPage() {
             <div className="lg:col-span-2 space-y-6">
               {listing.createdAt && <ReviewTimer submittedAt={listing.createdAt} />}
 
-              <ImageGallery
-                images={listing.images}
-                coverImageIndex={listing.images.findIndex((img) => img.isCover)}
-              />
+              <ImageGallery images={listing.images} coverImageIndex={listing.images.findIndex((img) => img.isCover)} />
 
               <PropertyHeader listing={listing} isOwner={false} />
 
@@ -325,15 +290,11 @@ export default function StaffReviewDetailPage() {
                   <CardTitle className="text-lg">Description</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-line leading-relaxed">
-                    {listing.description}
-                  </p>
+                  <p className="text-muted-foreground whitespace-pre-line leading-relaxed">{listing.description}</p>
                 </CardContent>
               </Card>
 
-              <AmenitiesList
-                amenities={listing.amenities}
-              />
+              <AmenitiesList amenities={listing.amenities} />
 
               <Tabs defaultValue="ai-checks">
                 <TabsList className="grid w-full grid-cols-2">
@@ -345,9 +306,7 @@ export default function StaffReviewDetailPage() {
                       </Badge>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="history">
-                    History ({reviewHistory.length})
-                  </TabsTrigger>
+                  <TabsTrigger value="history">History ({reviewHistory.length})</TabsTrigger>
                 </TabsList>
                 <TabsContent value="ai-checks" className="mt-4">
                   <AICheckResults checks={checks} />
@@ -374,19 +333,12 @@ export default function StaffReviewDetailPage() {
                 <Card>
                   <CardContent className="p-6 space-y-6">
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">
-                        Manual Review
-                      </h3>
-                      <ReviewChecklist
-                        checklist={checklist}
-                        onCheckChange={handleCheckChange}
-                      />
+                      <h3 className="text-lg font-semibold mb-4">Manual Review</h3>
+                      <ReviewChecklist checklist={checklist} onCheckChange={handleCheckChange} />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="staff-notes">
-                        Feedback To Seller
-                      </Label>
+                      <Label htmlFor="staff-notes">Feedback To Seller</Label>
                       <Textarea
                         id="feedback-notes"
                         placeholder="Add notes about this review..."
@@ -395,15 +347,11 @@ export default function StaffReviewDetailPage() {
                         rows={4}
                         className="resize-none"
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Auto-saved · Only visible to staff
-                      </p>
+                      <p className="text-xs text-muted-foreground">Auto-saved · Only visible to staff</p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="staff-notes">
-                        Staff Notes (Private)
-                      </Label>
+                      <Label htmlFor="staff-notes">Staff Notes (Private)</Label>
                       <Textarea
                         id="staff-notes"
                         placeholder="Add notes about this review..."
@@ -412,9 +360,7 @@ export default function StaffReviewDetailPage() {
                         rows={4}
                         className="resize-none"
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Auto-saved · Only visible to staff
-                      </p>
+                      <p className="text-xs text-muted-foreground">Auto-saved · Only visible to staff</p>
                     </div>
 
                     <ReviewActionPanel
@@ -428,15 +374,15 @@ export default function StaffReviewDetailPage() {
               </div>
             </div>
           </div>
-          <br/>
-           <VirtualTourPreview
-                scenes={scenes}
-                initialSceneIndex={currentSceneIndex}
-                onClose={() => setPreviewMode(false)}
-                fullscreen={previewMode}
-              />
+          <br />
+          <VirtualTourPreview
+            scenes={scenes}
+            initialSceneIndex={currentSceneIndex}
+            onClose={() => setPreviewMode(false)}
+            fullscreen={previewMode}
+          />
         </div>
       </main>
     </div>
-  )
+  );
 }

@@ -87,7 +87,7 @@ export function ListingsTable({
       currency: "USD",
       maximumFractionDigits: 0,
     }).format(price)
-    return type === "rental" ? `${formatted}/mo` : formatted
+    return type === "rent" ? `${formatted}/mo` : formatted
   }
 
   const formatDate = (date: string) => {

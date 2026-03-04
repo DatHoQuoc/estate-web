@@ -1,17 +1,17 @@
-import React from "react"
-import { cn } from "@/lib/utils"
-import { Card, CardContent } from "@/components/ui/card"
-import { TrendingUp, TrendingDown } from "lucide-react"
+import React from "react";
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface StatsCardProps {
-  title: string
-  value: number | string
-  icon: React.ReactNode
+  title: string;
+  value: number | string;
+  icon: React.ReactNode;
   trend?: {
-    value: number
-    direction: "up" | "down"
-  }
-  variant?: "default" | "success" | "warning" | "danger" | "info"
+    value: number;
+    direction: "up" | "down";
+  };
+  variant?: "default" | "success" | "warning" | "danger" | "info";
 }
 
 const variantStyles = {
@@ -20,7 +20,7 @@ const variantStyles = {
   warning: "bg-amber-500/10 text-amber-600",
   danger: "bg-destructive/10 text-destructive",
   info: "bg-blue-500/10 text-blue-600",
-}
+};
 
 export function StatsCard({
   title,
@@ -30,15 +30,10 @@ export function StatsCard({
   variant = "default",
 }: StatsCardProps) {
   return (
-    <Card className="min-w-[200px]">
+    <Card className="min-w-50 p-0 shadow-none">
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
-          <div
-            className={cn(
-              "p-2.5 rounded-lg",
-              variantStyles[variant]
-            )}
-          >
+          <div className={cn("p-2.5 rounded-lg", variantStyles[variant])}>
             {icon}
           </div>
           {trend && (
@@ -47,7 +42,7 @@ export function StatsCard({
                 "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
                 trend.direction === "up"
                   ? "bg-emerald-500/10 text-emerald-600"
-                  : "bg-destructive/10 text-destructive"
+                  : "bg-destructive/10 text-destructive",
               )}
             >
               {trend.direction === "up" ? (
@@ -59,9 +54,13 @@ export function StatsCard({
             </div>
           )}
         </div>
+        <div></div>
+
         <p className="mt-3 text-sm text-muted-foreground">{title}</p>
-        <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
+        <p className="mt-1 text-2xl font-bold text-foreground text-mono">
+          {value}
+        </p>
       </CardContent>
     </Card>
-  )
+  );
 }

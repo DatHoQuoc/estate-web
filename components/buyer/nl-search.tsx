@@ -12,7 +12,7 @@ interface NaturalLanguageSearchProps {
 
 const promptChips = [
   "3 bed homes under $800k in Seattle",
-  "Pet-friendly rentals near downtown",
+  "Pet-friendly rents near downtown",
   "Lake view villas with pools",
   "Condos with parking in SF"
 ]

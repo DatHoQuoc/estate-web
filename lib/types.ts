@@ -19,7 +19,7 @@ export type PropertyType =
   | "office"
   | "commercial"
 
-export type TransactionType = "sale" | "rental"
+export type TransactionType = "sale" | "rent"
 
 export interface Location {
   countryId: string

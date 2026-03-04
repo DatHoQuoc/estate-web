@@ -152,7 +152,7 @@ export const mockListings: Listing[] = [
     description:
       "Ideal for students or young professionals. This cozy studio apartment is located just minutes from the university campus. Includes utilities and high-speed internet.",
     propertyType: "apartment",
-    transactionType: "rental",
+    transactionType: "rent",
     price: 1200,
     area: 45,
     bedrooms: 0,
@@ -239,7 +239,7 @@ export const mockListings: Listing[] = [
     description:
       "Prime office space in the heart of the business district. Open floor plan with modern finishes. Includes conference rooms, reception area, and dedicated parking.",
     propertyType: "office",
-    transactionType: "rental",
+    transactionType: "rent",
     price: 5500,
     area: 200,
     bedrooms: 0,
