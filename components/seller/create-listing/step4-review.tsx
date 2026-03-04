@@ -374,7 +374,7 @@ export function Step4Review({ data, termsAccepted, onTermsChange }: Step4ReviewP
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-muted">
             <p className="text-2xl font-bold text-primary">
               {formatPrice(data.price)}
-              {data.transactionType === "rental" && (
+              {data.transactionType === "rent" && (
                 <span className="text-sm font-normal text-muted-foreground ml-1">/ month</span>
               )}
             </p>
@@ -574,14 +574,15 @@ export function Step4Review({ data, termsAccepted, onTermsChange }: Step4ReviewP
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">Your listing will be reviewed before it is published.</p>
             <button
-              type="button"
+              type="submit"
               disabled={!allValid || !termsAccepted}
               className={cn(
                 "px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
                 allValid && termsAccepted
                   ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md"
                   : "bg-muted text-muted-foreground cursor-not-allowed",
-              )}
+              )
+              }
             >
               Publish Listing
             </button>

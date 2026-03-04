@@ -32,6 +32,7 @@ import {
   uploadListingImages, // (listingId, files: File[]) => Promise<{ urls: string[] }>
   uploadListingVideos, // (listingId, files: File[]) => Promise<{ videoIds: string[], urls: string[] }>
   publishListing,
+  submitListingForReview,
 } from "@/lib/api-client";
 
 import { MediaType } from "@/components/seller/create-listing/step3-media-upload";
@@ -429,35 +430,35 @@ export default function CreateListingPage() {
     try {
       let listingId = formData.id;
 
-      // If somehow no draft exists, create one first
-      if (!listingId) {
-        const newListing = await createListingDraft({
-          title: formData.title,
-          description: formData.description,
-          listingType: formData.transactionType,
-          propertyType: formData.propertyType,
-          price: formData.price,
-          priceCurrency: "VND",
-          areaSqm: formData.area,
-          bedrooms: formData.bedrooms,
-          bathrooms: formData.bathrooms,
-          floorNumber: formData.floor ?? undefined,
-          yearBuilt: formData.yearBuilt ?? undefined,
-          streetAddress: formData.address,
-        });
-        listingId = newListing.id;
-        setFormData((prev) => ({ ...prev, id: listingId }));
-      }
+      // // If somehow no draft exists, create one first
+      // if (!listingId) {
+      //   const newListing = await createListingDraft({
+      //     title: formData.title,
+      //     description: formData.description,
+      //     listingType: formData.transactionType,
+      //     propertyType: formData.propertyType,
+      //     price: formData.price,
+      //     priceCurrency: "VND",
+      //     areaSqm: formData.area,
+      //     bedrooms: formData.bedrooms,
+      //     bathrooms: formData.bathrooms,
+      //     floorNumber: formData.floor ?? undefined,
+      //     yearBuilt: formData.yearBuilt ?? undefined,
+      //     streetAddress: formData.address,
+      //   });
+      //   listingId = newListing.id;
+      //   setFormData((prev) => ({ ...prev, id: listingId }));
+      // }
 
-      // Make sure all media is persisted before publishing
-      await saveMediaStep(listingId);
+      // // Make sure all media is persisted before publishing
+      // await saveMediaStep(listingId);
 
-      // Publish the virtual tour if one exists
-      if (formData.mediaType === "photos_and_tour" && tourId) {
-        await publishTour(listingId);
-      }
+      // // Publish the virtual tour if one exists
+      // if (formData.mediaType === "photos_and_tour" && tourId) {
+      //   await publishTour(listingId);
+      // }
 
-      await publishListing(listingId);
+      await submitListingForReview(listingId);
       navigate("/seller");
     } catch (err) {
       const message =

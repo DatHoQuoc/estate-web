@@ -123,8 +123,8 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="rental" id="rental" />
-                <Label htmlFor="rental" className="font-normal cursor-pointer">
+                <RadioGroupItem value="rent" id="rent" />
+                <Label htmlFor="rent" className="font-normal cursor-pointer">
                   For Rent
                 </Label>
               </div>
@@ -324,7 +324,7 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
                   đ
                 </span>
               </div>
-              {data.listingType === "rental" && (
+              {data.listingType === "rent" && (
                 <p className="text-xs text-muted-foreground">per month</p>
               )}
             </div>
