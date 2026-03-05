@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import type { Transaction, RefundRequest, UserStats, RefundReason } from '../../../../credit_fe/estate-credit-fe/src/types';
-import { apiClient, ENDPOINTS } from '../../../../credit_fe/estate-credit-fe/src/api/apiClient';
+import type { Transaction, RefundRequest, UserStats, RefundReason } from '@/lib/creditType';
+import { apiClient, ENDPOINTS } from '@/lib/../src/lib/api-client';
 
 interface CreditContextType {
   balance: number;
