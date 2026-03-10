@@ -5,10 +5,10 @@ import type { LoginDto } from "../../src/lib/auth-types";
 interface User {
   id: string;
   email: string;
-  first_name?: string;
-  last_name?: string;
-  display_name?: string;
-  avatar_url?: string;
+  first_name: string | null;
+  last_name: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
   role: "buyer" | "seller" | "staff" | "admin";
   // Computed helpers for the UI
   name: string;
@@ -41,14 +41,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const profileData = await authClient.getProfile();
       
+      const roleName = profileData.role?.name.toLowerCase() as any;
+      const mappedRole: any = ["buyer", "seller", "staff", "admin"].includes(roleName) 
+        ? roleName 
+        : "buyer";
+
       setUser({
         ...profileData,
+        id: profileData.user_id,
         // UI mappings for legacy compatibility
-        name: profileData.display_name || `${profileData.first_name} ${profileData.last_name}`.trim() || profileData.email,
+        name: profileData.display_name || `${profileData.first_name || ""} ${profileData.last_name || ""}`.trim() || profileData.email,
         avatar: profileData.avatar_url || "",
-        // Default role based on your app's needs currently, you might need to adapt this
-        // if your API sends a specific role string.
-        role: profileData.role || "buyer" 
+        role: mappedRole
       });
     } catch (error) {
       console.error("Failed to fetch user profile", error);
@@ -62,6 +66,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     refreshProfile();
+
+    const handleGlobalLogout = () => {
+      setUser(null);
+    };
+
+    window.addEventListener('auth-logout', handleGlobalLogout);
+    return () => window.removeEventListener('auth-logout', handleGlobalLogout);
   }, [refreshProfile]);
 
   const login = async (data: LoginDto) => {

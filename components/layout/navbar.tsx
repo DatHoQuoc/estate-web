@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ChevronDown, LogOut, MapPinHouse, Settings, User as UserIcon, Wallet } from "lucide-react";
+import { Bell, ChevronDown, LogOut, MapPinHouse, Settings, Shield, User as UserIcon, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -56,7 +56,7 @@ export function Navbar({ notificationCount = 0, onNotificationClick, onProfileCl
           <Button 
             variant="outline" 
             className="hidden sm:flex items-center gap-2 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 dark:hover:bg-emerald-500/20 shadow-sm rounded-full px-4 font-medium transition-all"
-            onClick={() => navigate("/credit")}
+            onClick={() => navigate("/profile/settings?tab=wallet")}
           >
             <Wallet className="h-4 w-4" />
             <span>{balance.toLocaleString()}</span>
@@ -96,18 +96,24 @@ export function Navbar({ notificationCount = 0, onNotificationClick, onProfileCl
                 <p className="text-xs text-muted-foreground truncate">{user.email}</p>
               </div>
               <DropdownMenuSeparator className="bg-border/50" />
-              <DropdownMenuItem onClick={() => navigate("/credit")} className="rounded-lg my-0.5 cursor-pointer font-medium focus:bg-emerald-50 focus:text-emerald-700 dark:focus:bg-emerald-500/10 dark:focus:text-emerald-400">
+              <DropdownMenuItem onClick={() => navigate("/profile/settings?tab=wallet")} className="rounded-lg my-0.5 cursor-pointer font-medium focus:bg-emerald-50 focus:text-emerald-700 dark:focus:bg-emerald-500/10 dark:focus:text-emerald-400">
                 <Wallet className="mr-2 h-4 w-4" />
                 Wallet & Credits
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onProfileClick} className="rounded-lg my-0.5 cursor-pointer font-medium focus:bg-primary/10 focus:text-primary">
+              <DropdownMenuItem onClick={() => navigate("/profile/settings")} className="rounded-lg my-0.5 cursor-pointer font-medium focus:bg-primary/10 focus:text-primary">
                 <UserIcon className="mr-2 h-4 w-4" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem className="rounded-lg my-0.5 cursor-pointer font-medium focus:bg-primary/10 focus:text-primary">
+              <DropdownMenuItem onClick={() => navigate("/profile/settings")} className="rounded-lg my-0.5 cursor-pointer font-medium focus:bg-primary/10 focus:text-primary">
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
+              {user.role === "admin" && (
+                <DropdownMenuItem onClick={() => navigate("/admin/users")} className="rounded-lg my-0.5 cursor-pointer font-medium text-primary focus:bg-primary/10">
+                  <Shield className="mr-2 h-4 w-4" />
+                  System Admin
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator className="bg-border/50" />
               <DropdownMenuItem onClick={onLogout} className="rounded-lg my-0.5 cursor-pointer font-medium text-destructive focus:bg-destructive/10 focus:text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />

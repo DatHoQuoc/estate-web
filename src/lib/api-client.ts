@@ -1,6 +1,8 @@
 // @ts-nocheck
 import axios from 'axios';
 
+import { handleTokenRefresh } from './refresh-token-manager';
+
 // ----------------------------------------------------------------------------
 // API Endpoints Configuration
 // ----------------------------------------------------------------------------
@@ -23,6 +25,7 @@ export const ENDPOINTS = {
 // Axios Client Configuration
 // ----------------------------------------------------------------------------
 const baseURL = import.meta.env.VITE_TRANSACTION_API_BASE_URL || 'http://localhost:8080/api/v1';
+const authBaseURL = import.meta.env.VITE_API_BASE_AUTH || 'http://localhost:8080/api/v1';
 
 export const apiClient = axios.create({
     baseURL,
@@ -40,16 +43,16 @@ export const apiClient = axios.create({
 // Add a request interceptor to automatically attach Auth Tokens if available
 apiClient.interceptors.request.use(
     (config) => {
-        // Example: Retrieve a token from localStorage (if your app uses it)
-        const token = localStorage.getItem('auth_token');
+        // Retrieve access_token from localStorage
+        const token = localStorage.getItem('access_token');
 
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
         }
 
-        // 👉 Thêm dòng này
+        // Custom Header for development/legacy
         if (config.headers) {
-        config.headers['X-User-Id'] = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+            config.headers['X-User-Id'] = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
         }
 
         return config;
@@ -62,18 +65,12 @@ apiClient.interceptors.request.use(
 // Add a response interceptor for global error handling
 apiClient.interceptors.response.use(
     (response) => {
-        // Any status code that lie within the range of 2xx cause this function to trigger
         return response;
     },
-    (error) => {
-        // Any status codes that falls outside the range of 2xx cause this function to trigger
-
-        // Example: Handle 401 Unauthorized globally
+    async (error) => {
+        // Handle 401 Unauthorized globally by attempting to refresh the token
         if (error.response && error.response.status === 401) {
-            console.warn('Unauthorized request. Possible expired token.');
-            // Optional: Redirect to login or clear token
-            // localStorage.removeItem('auth_token');
-            // window.location.href = '/login';
+            return handleTokenRefresh(error, apiClient, authBaseURL);
         }
 
         return Promise.reject(error);

@@ -5,6 +5,9 @@ export const AUTH_ENDPOINTS = {
   REFRESH: "/auth/refresh",
   VERIFY_EMAIL: "/auth/verify-email",
   LOGOUT: "/auth/logout",
+  UPDATE_PROFILE: "/users/profile",
+  USERS: "/users",
+  ROLES: "/roles",
 } as const;
 
 export interface LoginDto {
@@ -36,9 +39,57 @@ export interface VerifyEmailDto {
   user_id: string;
 }
 
-// Added to match standard JWT/Login responses despite unstructured spec
 export interface AuthResponse {
   access_token: string;
   refresh_token: string;
-  user?: any;
+  user?: UserResponseDto;
 }
+
+export interface RoleResponseDto {
+  role_id: string;
+  name: string;
+  description: string | null;
+}
+
+export interface UserResponseDto {
+  user_id: string;
+  email: string;
+  email_verified: boolean;
+  first_name: string | null;
+  last_name: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  user_status: "active" | "inactive" | "suspended";
+  role: RoleResponseDto | null;
+  created_at: string;
+  updated_at: string;
+  last_login_at: string | null;
+}
+
+export interface UpdateUserDto {
+  first_name?: string;
+  last_name?: string;
+  display_name?: string;
+  avatar_url?: string;
+  gender?: string;
+  language_preference?: string;
+  national_id?: string;
+  date_of_birth?: string;
+}
+
+export interface AdminCreateUserDto {
+  email: string;
+  password?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+export interface AdminUpdateUserDto extends UpdateUserDto {
+  user_status?: "active" | "inactive" | "suspended";
+  role_id?: string;
+}
+
+export interface MessageResponseDto {
+  message: string;
+}
+
