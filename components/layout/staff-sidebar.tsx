@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardList, CheckSquare, BarChart3, Settings, Users } from "lucide-react";
+import { LayoutDashboard, ClipboardList, CheckSquare, BarChart3, Settings, Users, Wallet } from "lucide-react";
 import { AppSidebar } from "@/components/common/app-sidebar";
 
 export function StaffSidebar() {
@@ -34,6 +34,12 @@ export function StaffSidebar() {
           label: "Sellers",
           icon: <Users />,
           path: "/staff/sellers",
+        },
+        {
+          id: "wallet",
+          label: "Wallet & Credits",
+          icon: <Wallet />,
+          path: "/credit",
         },
         {
           id: "settings",

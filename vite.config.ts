@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
       ],
     },
     server: {
-      port: env.VITE_SERVER_PORT,
+      port: Number(env.VITE_SERVER_PORT) || 5173,
       allowedHosts: [env.VITE_TRUSTED_DOMAIN],
 
       proxy: {

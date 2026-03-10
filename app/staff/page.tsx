@@ -103,7 +103,7 @@ function StaffDashboardContent() {
   return (
     <div className="min-h-screen bg-background">
 
-      <Navbar user={mockStaffUser} notificationCount={5} fixed />
+      <Navbar  notificationCount={5} fixed />
       <StaffSidebar />
 
       <main className="ml-60 pt-16">

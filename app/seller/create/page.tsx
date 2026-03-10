@@ -473,7 +473,7 @@ export default function CreateListingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={mockUser} />
+      <Navbar  />
 
       <main className="pt-16">
         <div className="max-w-4xl mx-auto py-8 px-4">

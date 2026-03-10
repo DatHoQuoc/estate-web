@@ -16,7 +16,7 @@ export default function ConnectPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={mockUser} />
+      <Navbar  />
       <main className="pt-16 max-w-5xl mx-auto px-4 py-10 space-y-6">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>

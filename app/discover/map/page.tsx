@@ -45,7 +45,7 @@ export default function MapDiscoveryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={mockUser} />
+      <Navbar  />
       <main className="pt-16 max-w-7xl mx-auto px-4 py-10 space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>

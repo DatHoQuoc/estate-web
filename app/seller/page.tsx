@@ -181,7 +181,7 @@ function SellerDashboardContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={mockUser} notificationCount={3} />
+      <Navbar  notificationCount={3} />
       <SellerSidebar />
 
       <main className="ml-60 pt-16">

@@ -1,0 +1,10 @@
+app/discover/listings/[id]/page.tsx(19,15): error TS2322: Type '{ user: User; }' is not assignable to type 'IntrinsicAttributes & NavbarProps'.
+  Property 'user' does not exist on type 'IntrinsicAttributes & NavbarProps'.
+app/seller/listings/[id]/edit/edit-listing.tsx(429,15): error TS2322: Type '{ user: User; }' is not assignable to type 'IntrinsicAttributes & NavbarProps'.
+  Property 'user' does not exist on type 'IntrinsicAttributes & NavbarProps'.
+app/seller/listings/[id]/feedback/page.tsx(48,15): error TS2322: Type '{ user: User; }' is not assignable to type 'IntrinsicAttributes & NavbarProps'.
+  Property 'user' does not exist on type 'IntrinsicAttributes & NavbarProps'.
+app/seller/listings/[id]/page.tsx(98,15): error TS2322: Type '{ user: User; }' is not assignable to type 'IntrinsicAttributes & NavbarProps'.
+  Property 'user' does not exist on type 'IntrinsicAttributes & NavbarProps'.
+app/staff/review/[id]/page.tsx(263,15): error TS2322: Type '{ user: User; }' is not assignable to type 'IntrinsicAttributes & NavbarProps'.
+  Property 'user' does not exist on type 'IntrinsicAttributes & NavbarProps'.

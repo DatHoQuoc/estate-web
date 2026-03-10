@@ -1,0 +1,24 @@
+lib/mock-data.ts(57,5): error TS2739: Type '{ address: string; city: string; district: string; ward: string; lat: number; lng: number; }' is missing the following properties from type 'Location': countryId, provinceId, wardId
+lib/mock-data.ts(92,17): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(92,25): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(92,32): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(92,43): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(92,55): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(117,5): error TS2739: Type '{ address: string; city: string; district: string; ward: string; lat: number; lng: number; }' is missing the following properties from type 'Location': countryId, provinceId, wardId
+lib/mock-data.ts(136,17): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(136,27): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(136,38): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(160,5): error TS2739: Type '{ address: string; city: string; district: string; ward: string; lat: number; lng: number; }' is missing the following properties from type 'Location': countryId, provinceId, wardId
+lib/mock-data.ts(179,17): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(179,29): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(203,5): error TS2739: Type '{ address: string; city: string; district: string; ward: string; lat: number; lng: number; }' is missing the following properties from type 'Location': countryId, provinceId, wardId
+lib/mock-data.ts(222,17): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(222,25): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(222,32): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(222,43): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(222,55): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(222,65): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(247,5): error TS2739: Type '{ address: string; city: string; district: string; ward: string; lat: number; lng: number; }' is missing the following properties from type 'Location': countryId, provinceId, wardId
+lib/mock-data.ts(266,17): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(266,29): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.
+lib/mock-data.ts(266,41): error TS2322: Type 'string' is not assignable to type 'AmenityResponse'.

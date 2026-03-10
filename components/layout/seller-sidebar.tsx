@@ -1,4 +1,4 @@
-import { LayoutDashboard, Home, Plus, BarChart3, Settings, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Home, Plus, BarChart3, Settings, MessageSquare, Wallet } from "lucide-react";
 import { AppSidebar } from "../common/app-sidebar";
 
 const menuItems = [
@@ -31,6 +31,12 @@ const menuItems = [
     label: "Messages",
     icon: <MessageSquare className="h-5 w-5" />,
     path: "/seller/messages",
+  },
+  {
+    id: "wallet",
+    label: "Wallet & Credits",
+    icon: <Wallet className="h-5 w-5" />,
+    path: "/credit",
   },
   {
     id: "settings",

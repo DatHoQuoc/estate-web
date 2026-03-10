@@ -24,7 +24,7 @@ export default function DiscoveryHomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={mockUser} notificationCount={0} />
+      <Navbar  notificationCount={0} />
       <main className="pt-16">
         <section className="bg-muted/50 border-b border-border">
           <div className="max-w-6xl mx-auto px-4 py-12 space-y-8">

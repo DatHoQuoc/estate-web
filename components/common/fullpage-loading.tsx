@@ -5,7 +5,7 @@ import { LandPlot, MapPinHouse } from "lucide-react";
 export default function FullPageLoading() {
   return (
     <div className="min-h-screen bg-background select-none">
-      <Navbar user={mockStaffUser} fixed />
+      <Navbar  fixed />
 
       <main className="pt-16 flex items-center justify-center h-screen gap-16">
         <div className="flex-1 grid place-items-end">

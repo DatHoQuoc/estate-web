@@ -21,7 +21,7 @@ export default function AssistantPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={mockUser} />
+      <Navbar  />
       <main className="pt-16 max-w-5xl mx-auto px-4 py-10 space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>

@@ -16,7 +16,7 @@ export default function ListingDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={mockUser} />
+      <Navbar />
       <main className="pt-16 max-w-6xl mx-auto px-4 py-10 space-y-8">
         <div className="flex items-center justify-between gap-2">
           <Button variant="ghost" onClick={() => navigate(-1)}>
