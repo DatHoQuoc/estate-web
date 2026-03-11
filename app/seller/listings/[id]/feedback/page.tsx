@@ -2,7 +2,6 @@
 
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Eye, Edit } from "lucide-react"
-import { Navbar } from "@/components/layout/navbar"
 import { AlertBanner } from "@/components/common/alert-banner"
 import { FeedbackSection } from "@/components/seller/feedback-section"
 import { Button } from "@/components/ui/button"
@@ -45,9 +44,7 @@ export default function FeedbackPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
-      <main className="pt-16">
+            <main className="pt-6">
         <div className="max-w-4xl mx-auto py-6 px-4">
           {/* Back Button */}
           <Button

@@ -1,11 +1,12 @@
-import {FeedbackResponse} from "@/lib/report-service-type"
+import { FeedbackResponse } from "@/lib/report-service-type"
 const API_BASE = import.meta.env.VITE_API_BASE_REPORTING || "http://localhost:8083"
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   const res = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
-       "X-User-Id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
 
       ...init?.headers,
     },

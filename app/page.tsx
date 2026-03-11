@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import PageFooter from "@/components/common/page-footer";
-import { Navbar } from "@/components/layout/navbar";
 import { mockUser } from "@/lib/mock-data";
 
 import { HeroSection } from "@/components/home/hero-section";
 import { FeaturesSection } from "@/components/home/features-section";
 import { PortalCardsSection } from "@/components/home/portal-cards-section";
+import { useAuth } from "@/components/auth/AuthContext";
 
 function useScrollY() {
   const [scrollY, setScrollY] = useState(0);
@@ -22,12 +23,19 @@ function useScrollY() {
 
 export default function HomePage() {
   const scrollY = useScrollY();
+  const navigate = useNavigate();
+  const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate("/discover");
+    }
+  }, [user, isLoading, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <ScrollingImage />
-      <LandingPageHeader scrollY={scrollY} />
-      <main className="flex-grow">
+      <main className="flex-grow pt-4">
         <HeroSection scrollY={scrollY} />
         <FeaturesSection />
         <PortalCardsSection />
@@ -39,14 +47,4 @@ export default function HomePage() {
 
 function ScrollingImage() {
   return <></>;
-}
-
-function LandingPageHeader({ scrollY }: { scrollY: number }) {
-  return (
-    <header className={"mb-8 sticky top-0 z-50 transition-colors duration-300 backdrop-blur-sm"} style={{ background: `rgba(255,255,255, ${Math.min(0.9, Math.max(0, (scrollY - 50) / 200))})` }}>
-      <div className="px-4 py-3 max-w-[1300px] mx-auto">
-        <Navbar />
-      </div>
-    </header>
-  );
 }

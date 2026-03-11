@@ -6,7 +6,6 @@ import { DiscoveryFilters } from "@/components/buyer/discovery-filters"
 import { MapResults } from "@/components/buyer/map-results"
 import { NaturalLanguageSearch } from "@/components/buyer/nl-search"
 import { mockListings, mockUser } from "@/lib/mock-data"
-import { Navbar } from "@/components/layout/navbar"
 import { Button } from "@/components/ui/button"
 
 export default function MapDiscoveryPage() {
@@ -45,8 +44,7 @@ export default function MapDiscoveryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar  />
-      <main className="pt-16 max-w-7xl mx-auto px-4 py-10 space-y-6">
+            <main className="pt-6 max-w-7xl mx-auto px-4 py-10 space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <p className="text-sm text-muted-foreground">Screen 2 • Map & results</p>

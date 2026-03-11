@@ -43,16 +43,10 @@ export const apiClient = axios.create({
 // Add a request interceptor to automatically attach Auth Tokens if available
 apiClient.interceptors.request.use(
     (config) => {
-        // Retrieve access_token from localStorage
         const token = localStorage.getItem('access_token');
 
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
-        }
-
-        // Custom Header for development/legacy
-        if (config.headers) {
-            config.headers['X-User-Id'] = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
         }
 
         return config;

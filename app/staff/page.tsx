@@ -3,7 +3,6 @@
 import { Suspense, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ClipboardList, UserCheck, CheckCircle, Timer } from "lucide-react";
-import { Navbar } from "@/components/layout/navbar";
 import { StaffSidebar } from "@/components/layout/staff-sidebar";
 import { StatsCard } from "@/components/common/stats-card";
 import { SearchBar } from "@/components/common/search-bar";
@@ -103,10 +102,9 @@ function StaffDashboardContent() {
   return (
     <div className="min-h-screen bg-background">
 
-      <Navbar  notificationCount={5} fixed />
       <StaffSidebar />
 
-      <main className="ml-60 pt-16">
+      <main className="ml-60 pt-6">
         <div className="p-6">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-foreground">Review Queue</h1>

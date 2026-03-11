@@ -1,13 +1,10 @@
-import { Navbar } from "@/components/layout/navbar";
 import { mockStaffUser } from "@/lib/mock-data";
 import { LandPlot, MapPinHouse } from "lucide-react";
 
 export default function FullPageLoading() {
   return (
     <div className="min-h-screen bg-background select-none">
-      <Navbar  fixed />
-
-      <main className="pt-16 flex items-center justify-center h-screen gap-16">
+            <main className="pt-6 flex items-center justify-center h-screen gap-16">
         <div className="flex-1 grid place-items-end">
           <LandPlot size="90vh" className="max-h-130" strokeWidth={0.25} />
         </div>

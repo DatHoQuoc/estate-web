@@ -14,7 +14,6 @@ import {
   Upload,
   RotateCcw,
 } from "lucide-react";
-import { Navbar } from "@/components/layout/navbar";
 import { SellerSidebar } from "@/components/layout/seller-sidebar";
 import { StatsCard } from "@/components/common/stats-card";
 import { SearchBar } from "@/components/common/search-bar";
@@ -181,10 +180,9 @@ function SellerDashboardContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar  notificationCount={3} />
       <SellerSidebar />
 
-      <main className="ml-60 pt-16">
+      <main className="ml-60 pt-6">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>

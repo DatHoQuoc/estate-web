@@ -1,14 +1,16 @@
-const  CREDIT_API =
+const CREDIT_API =
   import.meta.env.VITE_TRANSACTION_API_BASE_URL || "http://localhost:8086/api/v1"
 
 // ------------------------------------------------
 // Base request helper (same style as listing API)
 // ------------------------------------------------
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+  console.log("token", localStorage.getItem("access_token"));
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   const res = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
-      "X-User-Id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init?.headers,
     },
     ...init,

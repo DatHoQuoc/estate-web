@@ -5,12 +5,12 @@ export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_TRANSACTION_API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
-    "X-User-Id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+    Authorization: `Bearer ${localStorage.getItem("access_token")}`,
   }
 });
 
-export interface CreatePaymentLinkRequest { 
-  amount: number;       
+export interface CreatePaymentLinkRequest {
+  amount: number;
 }
 
 export interface CheckoutResponse {

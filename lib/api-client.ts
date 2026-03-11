@@ -200,11 +200,11 @@ export interface VirtualTourResponse {
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   const res = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
-      "X-User-Id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init?.headers,
     },
     ...init,
@@ -222,10 +222,11 @@ export async function fetchFormData<T>(
   url: string,
   body: FormData,
 ): Promise<T> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   const res = await fetch(url, {
     method: "POST",
     headers: {
-      "X-User-Id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: body,
   });
@@ -337,7 +338,7 @@ export async function createListingDraft(
   payload: CreateListingPayload,
 ): Promise<Listing> {
   const listing = await fetchJson<ApiListingResponse>(
-    `${API_BASE}/api/v1/seller/listings`,
+    `${API_BASE}/api/v1/seller/listings/draft`,
     {
       method: "POST",
       body: JSON.stringify(payload),

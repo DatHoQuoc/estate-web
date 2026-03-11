@@ -4,7 +4,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Download } from "lucide-react";
-import { Navbar } from "@/components/layout/navbar";
 import { ImageGallery } from "@/components/common/image-gallery";
 import { PropertyHeader, PropertySpecs, AmenitiesList } from "@/components/seller/property-details";
 import { AICheckResults } from "@/components/staff/ai-check-results";
@@ -260,9 +259,7 @@ export default function StaffReviewDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
-      <main className="pt-16">
+            <main className="pt-6">
         <div className="max-w-7xl mx-auto py-6 px-4">
           <div className="flex items-center justify-between mb-4">
             <Button variant="ghost" className="-ml-2" onClick={() => navigate("/staff")}>

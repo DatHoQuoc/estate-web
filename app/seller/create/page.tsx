@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
-import { Navbar } from "@/components/layout/navbar";
 import { FormStepper } from "@/components/common/form-stepper";
 import { Step1BasicInfo } from "@/components/seller/create-listing/step1-basic-info";
 import { Step2Details } from "@/components/seller/create-listing/step2-details";
@@ -473,9 +472,7 @@ export default function CreateListingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar  />
-
-      <main className="pt-16">
+            <main className="pt-6">
         <div className="max-w-4xl mx-auto py-8 px-4">
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">

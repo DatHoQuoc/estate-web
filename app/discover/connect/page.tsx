@@ -4,7 +4,6 @@ import { useMemo } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { BrokerConnectForm } from "@/components/buyer/broker-connect"
 import { mockListings, mockUser } from "@/lib/mock-data"
-import { Navbar } from "@/components/layout/navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -16,8 +15,7 @@ export default function ConnectPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar  />
-      <main className="pt-16 max-w-5xl mx-auto px-4 py-10 space-y-6">
+            <main className="pt-6 max-w-5xl mx-auto px-4 py-10 space-y-6">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <p className="text-sm text-muted-foreground">Screen 5 • Broker connection</p>

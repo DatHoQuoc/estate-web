@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Edit, Globe } from "lucide-react"
-import { Navbar } from "@/components/layout/navbar"
 import { ImageGallery } from "@/components/common/image-gallery"
 import {
   PropertyHeader,
@@ -95,9 +94,7 @@ export default function ListingDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
-      <main className="pt-16">
+            <main className="pt-6">
         <div className="max-w-7xl mx-auto py-6 px-4">
           <Button
             variant="ghost"

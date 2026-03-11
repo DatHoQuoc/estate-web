@@ -8,7 +8,6 @@ import { ListingCard } from "@/components/buyer/listing-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { mockListings, mockUser } from "@/lib/mock-data"
-import { Navbar } from "@/components/layout/navbar"
 
 export default function DiscoveryHomePage() {
   const navigate = useNavigate()
@@ -24,8 +23,7 @@ export default function DiscoveryHomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar  notificationCount={0} />
-      <main className="pt-16">
+      <main className="pt-6">
         <section className="bg-muted/50 border-b border-border">
           <div className="max-w-6xl mx-auto px-4 py-12 space-y-8">
             <div className="flex flex-col gap-4">

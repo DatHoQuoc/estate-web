@@ -4,7 +4,6 @@ import { useMemo } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { ChatAssistant } from "@/components/buyer/chat-assistant"
 import { mockListings, mockUser } from "@/lib/mock-data"
-import { Navbar } from "@/components/layout/navbar"
 import { Button } from "@/components/ui/button"
 
 export default function AssistantPage() {
@@ -21,8 +20,7 @@ export default function AssistantPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar  />
-      <main className="pt-16 max-w-5xl mx-auto px-4 py-10 space-y-6">
+            <main className="pt-6 max-w-5xl mx-auto px-4 py-10 space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-sm text-muted-foreground">Screen 4 • AI assistant</p>

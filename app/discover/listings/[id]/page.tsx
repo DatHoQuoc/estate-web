@@ -7,7 +7,6 @@ import { ImageGallery } from "@/components/common/image-gallery"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { mockListings, mockUser } from "@/lib/mock-data"
-import { Navbar } from "@/components/layout/navbar"
 
 export default function ListingDetailPage() {
   const navigate = useNavigate()
@@ -16,8 +15,7 @@ export default function ListingDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="pt-16 max-w-6xl mx-auto px-4 py-10 space-y-8">
+            <main className="pt-6 max-w-6xl mx-auto px-4 py-10 space-y-8">
         <div className="flex items-center justify-between gap-2">
           <Button variant="ghost" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
