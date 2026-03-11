@@ -30,8 +30,8 @@ export const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Số dư khả dụng</p>
-                <p className="text-3xl font-black mt-1">{balance.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Credits</p>
+                <p className="text-3xl font-black mt-1">{(balance * 1000).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">VND</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <CreditCard size={22} className="text-primary" />
@@ -45,8 +45,8 @@ export const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Đang tạm khóa</p>
-                <p className="text-3xl font-black mt-1">{lockedBalance.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Credits (chờ duyệt)</p>
+                <p className="text-3xl font-black mt-1">{(lockedBalance * 1000).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">VND (chờ duyệt)</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
                 <Lock size={22} className="text-orange-500" />
@@ -83,14 +83,14 @@ export const Dashboard = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-end gap-2">
-              <span className="text-5xl font-bold">{balance.toLocaleString()}</span>
-              <span className="text-muted-foreground text-lg pb-1">Credits</span>
+              <span className="text-5xl font-bold">{(balance * 1000).toLocaleString()}</span>
+              <span className="text-muted-foreground text-lg pb-1">VND</span>
             </div>
 
             {lockedBalance > 0 && (
               <div className="flex items-center gap-2 rounded-lg border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 px-3 py-2.5 text-sm text-amber-800 dark:text-amber-200">
                 <Info size={15} className="shrink-0" />
-                <span>Đang tạm khóa <strong>{lockedBalance}</strong> credits cho bài đăng chờ duyệt</span>
+                <span>Đang tạm khóa <strong>{(lockedBalance * 1000).toLocaleString()}</strong> VND cho bài đăng chờ duyệt</span>
               </div>
             )}
 

@@ -121,7 +121,7 @@ export const TransactionHistory = () => {
                           <div>
                             <p className="font-semibold leading-tight">{tx.description}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              ID: {String(tx.id).slice(0, 8)}
+                              {tx.id && tx.id.length > 8 && <>ID: {String(tx.id).slice(0, 8)}</>}
                               {tx.reference && <> · Ref: {tx.reference}</>}
                             </p>
                           </div>
@@ -136,9 +136,9 @@ export const TransactionHistory = () => {
                             : tx.amount < 0 ? "text-red-600 dark:text-red-400"
                               : ""
                         )}>
-                          {tx.amount > 0 ? '+' : ''}{tx.amount}
+                          {tx.amount > 0 ? '+' : ''}{(tx.amount).toLocaleString()}
                         </span>
-                        <span className="text-xs text-muted-foreground ml-1">CR</span>
+                        <span className="text-xs text-muted-foreground ml-1">VND</span>
                       </td>
 
                       {/* Status */}
