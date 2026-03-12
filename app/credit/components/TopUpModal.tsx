@@ -74,7 +74,7 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose }) => {
       <DialogContent
         className={
           modalState === "payos"
-            ? "p-0 max-w-4xl h-[90vh]"
+            ? "p-0 max-w-6xl h-[90vh]"
             : "max-w-md"
         }
       >

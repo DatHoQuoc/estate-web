@@ -59,7 +59,7 @@ export default function ProfileSettingsPage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <button

@@ -25,9 +25,9 @@ export function ListingCard({ listing, onView, onConnect, onAskAI, highlight }: 
   const cover = listing.images?.find((img) => img.isCover) || listing.images?.[0];
 
   return (
-    <Card className={cn("overflow-hidden border-border", highlight && "ring-2 ring-primary/60")}>
+    <Card className={cn("overflow-hidden border-border pt-0", highlight && "ring-2 ring-primary/60")}>
       {cover && (
-        <div className="relative aspect-video">
+        <div className="relative aspect-video text-white">
           <img src={cover.url} alt={cover.alt || listing.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           <div className="absolute top-3 left-3 flex gap-2">
@@ -38,9 +38,9 @@ export function ListingCard({ listing, onView, onConnect, onAskAI, highlight }: 
               {listing.transactionType || listing.listingType}
             </span>
           </div>
-          <div className="absolute bottom-3 left-3 text-foreground space-y-1">
+          <div className="absolute bottom-3 left-3 space-y-1">
             <p className="text-lg font-semibold drop-shadow">{formatPrice(listing.price)}</p>
-            <p className="text-xs text-foreground/80 drop-shadow flex items-center gap-1">
+            <p className="text-xs opacity-80 drop-shadow flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5" /> {listing.location?.district || listing.location?.city || ""}
             </p>
           </div>

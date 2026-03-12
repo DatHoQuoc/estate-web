@@ -45,7 +45,7 @@ export default function FeedbackPage() {
   return (
     <div className="min-h-screen bg-background">
             <main className="pt-6">
-        <div className="max-w-4xl mx-auto py-6 px-4">
+        <div className="max-w-6xl mx-auto py-6 px-4">
           {/* Back Button */}
           <Button
             variant="ghost"

@@ -473,7 +473,7 @@ export default function CreateListingPage() {
   return (
     <div className="min-h-screen bg-background">
             <main className="pt-6">
-        <div className="max-w-4xl mx-auto py-8 px-4">
+        <div className="max-w-6xl mx-auto py-8 px-4">
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
             <Button
