@@ -632,7 +632,7 @@ export async function approveListing(
   await fetchJson<void>(
     `${API_BASE}/api/v1/staff/listings/${listingId}/approve`,
     {
-      method: "POST",
+      method: "PUT",
       body: JSON.stringify({
         staffNotesInternal,
         feedbackToSeller,
