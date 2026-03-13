@@ -195,7 +195,7 @@ function SellerDashboardContent() {
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => navigate("/credit")}>Create Wallet</Button>
+              <Button variant="outline" onClick={() => navigate("/profile/settings?tab=wallet")}>Create Wallet</Button>
 
 
               <Button onClick={() => navigate("/seller/create")}>
@@ -361,13 +361,13 @@ function SellerDashboardContent() {
 
                               {listing.status.toLowerCase() ===
                                 "pending_review" && (
-                                <DropdownMenuItem
-                                  onClick={() => handleUnpublish(listing.id)}
-                                >
-                                  <RotateCcw className="mr-2 h-4 w-4" />
-                                  Withdraw
-                                </DropdownMenuItem>
-                              )}
+                                  <DropdownMenuItem
+                                    onClick={() => handleUnpublish(listing.id)}
+                                  >
+                                    <RotateCcw className="mr-2 h-4 w-4" />
+                                    Withdraw
+                                  </DropdownMenuItem>
+                                )}
 
                               {listing.status.toLowerCase() === "draft" && (
                                 <>
@@ -395,21 +395,21 @@ function SellerDashboardContent() {
 
                               {(listing.status.toLowerCase() === "rejected" ||
                                 listing.status === "staff_rejected") && (
-                                <>
-                                  <DropdownMenuItem
-                                    onClick={() => handleEdit(listing.id)}
-                                  >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit & Resubmit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDelete(listing.id)}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </>
-                              )}
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() => handleEdit(listing.id)}
+                                    >
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Edit & Resubmit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleDelete(listing.id)}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>

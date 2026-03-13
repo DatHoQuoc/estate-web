@@ -1,0 +1,263 @@
+openapi: 3.1.0
+info:
+  title: Search Listings API
+  description: API for searching and filtering normalized property listings.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+paths:
+  /api/v1/listings:
+    get:
+      summary: Search and filter property listings
+      operationId: searchListings
+      tags:
+        - Listings
+      parameters:
+        - name: query
+          in: query
+          description: Natural language search text
+          schema:
+            type: string
+        - name: propertyType
+          in: query
+          description: Type of property (e.g., apartment, house, villa)
+          schema:
+            type: string
+            enum: [all, apartment, house, villa, office, commercial]
+        - name: transactionType
+          in: query
+          description: Sale or Rent
+          schema:
+            type: string
+            enum: [sale, rent]
+        - name: minPrice
+          in: query
+          description: Minimum price
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          description: Maximum price
+          schema:
+            type: number
+        - name: minBedrooms
+          in: query
+          description: Minimum number of bedrooms
+          schema:
+            type: integer
+        - name: minBathrooms
+          in: query
+          description: Minimum number of bathrooms
+          schema:
+            type: integer
+        - name: minArea
+          in: query
+          description: Minimum area in square meters
+          schema:
+            type: number
+        - name: sort
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [relevance, price_asc, price_desc, newest]
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Successful search response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+
+components:
+  schemas:
+    SearchResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchListing'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    SearchListing:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        propertyType:
+          type: string
+          enum: [apartment, house, villa, office, commercial]
+        transactionType:
+          type: string
+          enum: [sale, rent]
+        location:
+          $ref: '#/components/schemas/LocationDetails'
+        propertyDetails:
+          $ref: '#/components/schemas/PropertyDetails'
+        pricing:
+          $ref: '#/components/schemas/PricingDetails'
+        legal:
+          $ref: '#/components/schemas/LegalDetails'
+        media:
+          $ref: '#/components/schemas/MediaDetails'
+        agent:
+          $ref: '#/components/schemas/AgentDetails'
+        status:
+          type: string
+          enum: [published, draft, pending, sold]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LocationDetails:
+      type: object
+      properties:
+        country:
+          type: string
+        province:
+          type: string
+        district:
+          type: string
+        ward:
+          type: string
+        streetAddress:
+          type: string
+        postalCode:
+          type: string
+        coordinates:
+          type: object
+          properties:
+            lat:
+              type: number
+              format: double
+            lng:
+              type: number
+              format: double
+
+    PropertyDetails:
+      type: object
+      properties:
+        bedrooms:
+          type: integer
+        bathrooms:
+          type: integer
+        areaSqm:
+          type: number
+          format: float
+        yearBuilt:
+          type: integer
+        floorNumber:
+          type: integer
+        totalFloors:
+          type: integer
+        direction:
+          type: string
+        features:
+          type: array
+          items:
+            type: string
+
+    PricingDetails:
+      type: object
+      properties:
+        price:
+          type: number
+        currency:
+          type: string
+        formattedPrice:
+          type: string
+        pricePerSqm:
+          type: number
+
+    LegalDetails:
+      type: object
+      properties:
+        legalStatus:
+          type: string
+        ownershipType:
+          type: string
+
+    MediaDetails:
+      type: object
+      properties:
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        videos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Video'
+
+    Image:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        thumbnailUrl:
+          type: string
+        alt:
+          type: string
+        isCover:
+          type: boolean
+        order:
+          type: integer
+
+    Video:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        thumbnailUrl:
+          type: string
+
+    AgentDetails:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        avatar:
+          type: string
+        phone:
+          type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer

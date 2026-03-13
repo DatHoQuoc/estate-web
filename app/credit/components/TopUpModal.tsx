@@ -26,20 +26,20 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose }) => {
 
   const { refreshData } = useCredit();
 
-  const [amount, setAmount] = useState("50");
+  const [amount, setAmount] = useState("50000");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>("form");
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
   const parsedAmount = Number(amount);
-  const isValidAmount = parsedAmount >= 10 && parsedAmount <= 1000;
-  const vnd = parsedAmount * 1000;
+  const isValidAmount = parsedAmount >= 10 && parsedAmount <= 1000000;
+  const vnd = parsedAmount;
 
   const handleSubmit = async () => {
 
     if (!isValidAmount) {
-      setError("Số credit phải từ 10 đến 1000.");
+      setError("Số tiền phải từ 10.000 đến 1.000.000.");
       return;
     }
 
@@ -67,7 +67,7 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose }) => {
 
   };
 
-  const PRESET = [10, 50, 100, 200, 500];
+  const PRESET = [10000, 50000, 100000, 200000, 500000];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -102,13 +102,18 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose }) => {
                     <button
                       key={v}
                       onClick={() => setAmount(String(v))}
-                      className={`px-3 py-1 rounded border text-sm ${
-                        parsedAmount === v
-                          ? "bg-primary text-white"
-                          : "hover:border-primary"
-                      }`}
+                      className={`px-3 py-1 rounded border text-sm ${parsedAmount === v
+                        ? "bg-primary text-white"
+                        : "hover:border-primary"
+                        }`}
                     >
-                      {v} CR
+                      {v.toLocaleString({
+                        'baseName': 'vi-VN',
+                        'language': 'vi-VN'
+
+                      } as Intl.LocalesArgument, {
+                        'currency': 'VND'
+                      })}
                     </button>
                   ))}
                 </div>

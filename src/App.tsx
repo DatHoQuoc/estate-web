@@ -11,6 +11,7 @@ import StaffReviewDetailPage from "@app/staff/review/[id]/page";
 import EditListingPage from "@app/seller/listings/[id]/edit/edit-listing";
 import BuyerDiscoveryHomePage from "@app/discover/page";
 import MapDiscoveryPage from "@app/discover/map/page";
+import SearchPage from "@app/search/page";
 import BuyerListingDetailPage from "@app/discover/listings/[id]/page";
 import AssistantPage from "@app/discover/assistant/page";
 import ConnectPage from "@app/discover/connect/page";
@@ -38,6 +39,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/discover" element={<BuyerDiscoveryHomePage />} />
               <Route path="/discover/map" element={<MapDiscoveryPage />} />
+              <Route path="/search" element={<SearchPage />} />
               <Route path="/discover/listings/:id" element={<BuyerListingDetailPage />} />
               <Route path="/discover/assistant" element={<AssistantPage />} />
               <Route path="/discover/connect" element={<ConnectPage />} />
