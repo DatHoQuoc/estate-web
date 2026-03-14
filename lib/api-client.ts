@@ -4,6 +4,13 @@ import type { Listing, Country, Province, Ward, ChecklistItem } from "@/lib/type
 const API_BASE =
   import.meta.env.VITE_API_BASE_LISTING || "http://localhost:8080";
 
+const ESTATE_SEARCH_API_BASE =
+  import.meta.env.VITE_API_BASE_ESTATE_SEARCH || API_BASE;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 interface ApiListingResponse {
   listingId: string;
   userId?: string;
@@ -91,6 +98,104 @@ export interface POIResponse {
 }
 
 export interface ListingReviewResponse {
+
+}
+export interface ChatListingPublishedMessage {
+  listingId: string;
+  userId: string;
+  title: string;
+  description: string;
+  listingType: string;
+  propertyType: string;
+  status: number;
+  price: number;
+  priceCurrency: string;
+  pricePeriod: string | null;
+  negotiable: boolean;
+  areaSqm: number;
+  bedrooms: number;
+  bathrooms: number;
+  floors: number | null;
+  floorNumber: number;
+  yearBuilt: number;
+  streetAddress: string;
+  buildingName: string | null;
+  wardName: string;
+  provinceName: string;
+  countryName: string;
+  latitude: number | null;
+  longitude: number | null;
+  featuredImageUrl: string;
+  imagesJson: Record<string, unknown>[];
+  additionalInfoJson: Record<string, unknown> | null;
+  viewCount: number;
+  saveCount: number;
+  contactCount: number;
+  creditsLocked: number;
+  creditsCharged: number;
+  creditsRefunded: number;
+  amenityNames: string[];
+  hasVirtualTour: boolean;
+  createdAt: number;
+  updatedAt: number;
+  submittedAt: number;
+  publishedAt: number;
+  expiredAt: number | null;
+  freePost: boolean;
+}
+
+export interface ChatReplyDto {
+  text: string;
+  listings?: ChatListingPublishedMessage[];
+}
+
+export interface ChatSessionResponseDto {
+  userId: string;
+  sessionId: string;
+  reply: ChatReplyDto;
+}
+
+export interface SendMessageDto {
+  message: string;
+}
+
+export interface ChatClearSessionResponseDto {
+  success: boolean;
+  message: string;
+}
+
+export interface ChatHistoryContentPartDto {
+  text?: string;
+  functionCall?: Record<string, unknown>;
+  functionResponse?: Record<string, unknown>;
+}
+
+export interface ChatHistoryContentDto {
+  role: string;
+  parts: ChatHistoryContentPartDto[];
+  listings?: ChatListingPublishedMessage[];
+}
+
+export interface ChatHistoryResponseDto {
+  userId: string;
+  sessionId: string;
+  history: ChatHistoryContentDto[];
+}
+
+export interface ChatSessionListItemDto {
+  sessionId: string;
+  updatedAt: string;
+}
+
+export interface ChatSessionsListResponseDto {
+  userId: string;
+  page: number;
+  limit: number;
+  total: number;
+  sessions: ChatSessionListItemDto[];
+}
+
+export interface ReviewHistoryItem {
   reviewId: string;
   listingId: string;
   reviewerId: string;
@@ -413,6 +518,85 @@ export async function getCoordinates(address: string) {
 
 export async function getAllListingAmenities(): Promise<AmenityResponse[]> {
   return fetchJson<AmenityResponse[]>(`${API_BASE}/api/v1/amenities`);
+}
+
+export async function searchListingsByPrompt(
+  payload: Record<string, unknown>,
+): Promise<ChatListingPublishedMessage[]> {
+  const response = await fetchJson<unknown>(
+    `${ESTATE_SEARCH_API_BASE}/listings/search`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (Array.isArray(response)) {
+    return response as ChatListingPublishedMessage[];
+  }
+
+  if (isRecord(response)) {
+    const candidates = [
+      response.listings,
+      response.data,
+      response.items,
+      response.content,
+    ];
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate)) {
+        return candidate as ChatListingPublishedMessage[];
+      }
+    }
+  }
+
+  return [];
+}
+
+export async function createChatSession(): Promise<ChatSessionResponseDto> {
+  return fetchJson<ChatSessionResponseDto>(`${ESTATE_SEARCH_API_BASE}/chat`, {
+    method: "POST",
+  });
+}
+
+export async function getChatSessions(
+  page = 1,
+  limit = 20,
+): Promise<ChatSessionsListResponseDto> {
+  return fetchJson<ChatSessionsListResponseDto>(
+    `${ESTATE_SEARCH_API_BASE}/chat?page=${page}&limit=${limit}`,
+  );
+}
+
+export async function sendChatMessage(
+  sessionId: string,
+  payload: SendMessageDto,
+): Promise<ChatSessionResponseDto> {
+  return fetchJson<ChatSessionResponseDto>(
+    `${ESTATE_SEARCH_API_BASE}/chat/${sessionId}`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function clearChatSession(
+  sessionId: string,
+): Promise<ChatClearSessionResponseDto> {
+  return fetchJson<ChatClearSessionResponseDto>(
+    `${ESTATE_SEARCH_API_BASE}/chat/${sessionId}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export async function getChatHistory(
+  sessionId: string,
+): Promise<ChatHistoryResponseDto> {
+  return fetchJson<ChatHistoryResponseDto>(
+    `${ESTATE_SEARCH_API_BASE}/chat/${sessionId}/history`,
+  );
 }
 
 export async function getListingPOIs(
