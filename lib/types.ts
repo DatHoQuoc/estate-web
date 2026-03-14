@@ -2,24 +2,25 @@ import { AmenityResponse } from "./api-client"
 
 // Listing Types
 export type ListingStatus =
-  | "draft"
-  | "pending_ai_review"
-  | "ai_rejected"
-  | "pending_staff_review"
-  | "staff_rejected"
-  | "published"
-  | "paused"
-  | "sold"
+  | "DRAFT"
+  | "PENDING_REVIEW"
+  | "PUBLISHED"
+  | "REJECTED"
+  | "EXPIRED"
+  | "ARCHIVED"
+  | "DELETED"
+
 
 export type PropertyType =
-  | "apartment"
-  | "house"
-  | "villa"
-  | "land"
-  | "office"
-  | "commercial"
+  | "APARTMENT"
+  | "HOUSE"
+  | "VILLA"
+  | "LAND"
+  | "COMMERCIAL"
 
-export type TransactionType = "sale" | "rent"
+
+export type TransactionType = "SALE" | "RENT" | "LEASE"
+
 
 export interface Location {
   countryId: string
@@ -85,7 +86,9 @@ export interface Listing {
   direction?: string
   legalStatus?: string
   featuredImageUrl: string
+  submittedAt?: string
 }
+
 
 export interface ListingStats {
   total: number
@@ -95,6 +98,14 @@ export interface ListingStats {
   draft: number
 }
 
+export interface ChecklistItem {
+  id: string
+  label: string
+  checked: boolean
+  required: boolean
+}
+
+
 // Review Types
 export type Priority = "high" | "medium" | "low"
 
@@ -103,8 +114,9 @@ export interface ReviewListing {
   title: string
   seller: {
     name: string
-    type: "individual" | "broker"
+    type: "individual" | "broker" | "owner"
   }
+
   priority: Priority
   waitTime: number
   submittedAt: string
@@ -112,7 +124,9 @@ export interface ReviewListing {
   propertyType: PropertyType
   price: number
   thumbnailUrl?: string
+  status: ListingStatus
 }
+
 
 export interface AICheck {
   type: "image_quality" | "duplicate" | "price_anomaly" | "content_policy"
@@ -227,15 +241,18 @@ export interface Listing {
   amenities: AmenityResponse[]
   features: string[]
   seller: User
+  submittedAt?: string
 }
+
 
 export interface MergedListing {
  id: string;
     title: string;
     seller: {
         name: string;
-        type: "individual" | "broker";
+        type: "individual" | "broker" | "owner";
     };
+
     priority: Priority;
     waitTime: number;
     submittedAt: string;
@@ -243,4 +260,6 @@ export interface MergedListing {
     propertyType: PropertyType;
     price: number;
     thumbnailUrl?: string;
+    status: ListingStatus;
 }
+

@@ -3,11 +3,20 @@ import { BrowserRouter, Outlet, Route, Routes, Navigate } from "react-router-dom
 import RootLayout from "@app/layout";
 import HomePage from "@app/page";
 import SellerDashboardPage from "@app/seller/page";
+import SellerListingsPage from "@app/seller/listings/page";
+import SellerAnalyticsPage from "@app/seller/analytics/page";
+import SellerMessagesPage from "@app/seller/messages/page";
+import SellerSettingsPage from "@app/seller/settings/page";
 import CreateListingPage from "@app/seller/create/page";
 import ListingDetailPage from "@app/seller/listings/[id]/page";
 import FeedbackPage from "@app/seller/listings/[id]/feedback/page";
 import StaffDashboardPage from "@app/staff/page";
 import StaffReviewDetailPage from "@app/staff/review/[id]/page";
+import StaffReviewQueuePage from "@app/staff/review/page";
+import StaffMyReviewsPage from "@app/staff/my-reviews/page";
+import StaffAnalyticsPage from "@app/staff/analytics/page";
+import StaffSellersPage from "@app/staff/sellers/page";
+import StaffSettingsPage from "@app/staff/settings/page";
 import EditListingPage from "@app/seller/listings/[id]/edit/edit-listing";
 import BuyerDiscoveryHomePage from "@app/discover/page";
 import MapDiscoveryPage from "@app/discover/map/page";
@@ -21,6 +30,7 @@ import { CreditProvider } from "@/components/credit/CreditContext";
 import LoginPage from "@app/auth/login/page";
 import RegisterPage from "@app/auth/register/page";
 import ProfileSettingsPage from "@app/profile/settings/page";
+import CreditPage from "@app/credit/page";
 import AdminUsersPage from "@app/admin/users/page";
 import { Toaster } from "react-hot-toast";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -44,6 +54,11 @@ function App() {
               <Route path="/discover/assistant" element={<AssistantPage />} />
               <Route path="/discover/connect" element={<ConnectPage />} />
               <Route path="/seller" element={<ProtectedRoute><SellerDashboardPage /></ProtectedRoute>} />
+              <Route path="/seller/listings" element={<ProtectedRoute><SellerListingsPage /></ProtectedRoute>} />
+              <Route path="/seller/analytics" element={<ProtectedRoute><SellerAnalyticsPage /></ProtectedRoute>} />
+              <Route path="/seller/messages" element={<ProtectedRoute><SellerMessagesPage /></ProtectedRoute>} />
+              <Route path="/seller/settings" element={<ProtectedRoute><SellerSettingsPage /></ProtectedRoute>} />
+              <Route path="/credit" element={<ProtectedRoute><CreditPage /></ProtectedRoute>} />
               <Route path="/seller/create" element={<ProtectedRoute><CreateListingPage /></ProtectedRoute>} />
               <Route path="/seller/listings/:id" element={<ProtectedRoute><ListingDetailPage /></ProtectedRoute>} />
               <Route path="/seller/listings/:id/feedback" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
@@ -52,7 +67,12 @@ function App() {
               <Route path="/profile/settings" element={<ProtectedRoute><ProfileSettingsPage /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsersPage /></ProtectedRoute>} />
               <Route path="/staff" element={<ProtectedRoute><StaffDashboardPage /></ProtectedRoute>} />
+              <Route path="/staff/review" element={<ProtectedRoute><StaffReviewQueuePage /></ProtectedRoute>} />
               <Route path="/staff/review/:id" element={<ProtectedRoute><StaffReviewDetailPage /></ProtectedRoute>} />
+              <Route path="/staff/my-reviews" element={<ProtectedRoute><StaffMyReviewsPage /></ProtectedRoute>} />
+              <Route path="/staff/analytics" element={<ProtectedRoute><StaffAnalyticsPage /></ProtectedRoute>} />
+              <Route path="/staff/sellers" element={<ProtectedRoute><StaffSellersPage /></ProtectedRoute>} />
+              <Route path="/staff/settings" element={<ProtectedRoute><StaffSettingsPage /></ProtectedRoute>} />
             </Route>
 
             <Route path="*" element={<HomePage />} />

@@ -10,12 +10,11 @@ import { FilterDropdown } from "@/components/common/filter-dropdown";
 import { Pagination } from "@/components/common/pagination";
 import { ReviewQueueTable } from "@/components/staff/review-queue-table";
 import {
-  mockStaffUser,
-  mockReviewQueue,
-  mockStaffStats,
-} from "@/lib/mock-data";
-import { listSellerListings } from "@/lib/api-client";
+  getPendingReviewListings,
+} from "@/lib/api-client";
 import type { Listing, MergedListing } from "@/lib/types";
+import { mockStaffUser, mockStaffStats } from "@/lib/mock-data";
+
 const priorityFilterOptions = [
   { value: "all", label: "All Priority" },
   { value: "high", label: "High" },
@@ -27,7 +26,9 @@ const statusFilterOptions = [
   { value: "all", label: "All Status" },
   { value: "unassigned", label: "Unassigned" },
   { value: "assigned", label: "Assigned to Me" },
+  { value: "PUBLISHED", label: "Published" },
 ];
+
 
 function StaffDashboardContent() {
   const navigate = useNavigate();
@@ -47,19 +48,32 @@ function StaffDashboardContent() {
   const loadListings = () => {
     let isMounted = true;
     setLoading(true);
-    listSellerListings()
+    getPendingReviewListings()
       .then((data) => {
         if (!isMounted) return;
 
-        // Merge real API data with mock data
-        const mergedListings = data.map((apiListing, index) => {
-          const mockListing = mockReviewQueue[index] || mockReviewQueue[0];
+        const mergedListings: MergedListing[] = data.map((apiListing) => {
+          const submittedDate = apiListing.submittedAt
+            ? new Date(apiListing.submittedAt)
+            : new Date(apiListing.createdAt);
+          const waitTimeHours = Math.floor(
+            (new Date().getTime() - submittedDate.getTime()) / (1000 * 60 * 60)
+          );
 
           return {
-            ...mockListing, // All mock attributes
-            id: apiListing.id, // Override with real API data
+            id: apiListing.id,
             title: apiListing.title,
+            seller: {
+              name: apiListing.seller.name || "Unknown Seller",
+              type: apiListing.seller.type || "individual",
+            },
+            priority: "medium", // Default priority as it's not in the API yet
+            waitTime: waitTimeHours,
+            submittedAt: submittedDate.toISOString(),
+            propertyType: apiListing.propertyType,
+            price: apiListing.price,
             thumbnailUrl: apiListing.featuredImageUrl,
+            status: apiListing.status,
           };
         });
 
@@ -73,6 +87,7 @@ function StaffDashboardContent() {
       .finally(() => {
         if (isMounted) setLoading(false);
       });
+
     return () => {
       isMounted = false;
     };
@@ -87,7 +102,9 @@ function StaffDashboardContent() {
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "unassigned" && !listing.assignedTo) ||
-      (statusFilter === "assigned" && listing.assignedTo === mockStaffUser.id);
+      (statusFilter === "assigned" && listing.assignedTo === mockStaffUser.id) ||
+      (statusFilter === listing.status);
+
     return matchesSearch && matchesPriority && matchesStatus;
   });
 

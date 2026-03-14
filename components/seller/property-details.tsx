@@ -49,9 +49,10 @@ export function PropertyHeader({ listing, isOwner, onEdit }: PropertyHeaderProps
         <span className="text-3xl font-bold text-primary">
           {formatPrice(listing.price)}
         </span>
-        {listing.transactionType === "rent" && (
+        {listing.transactionType === "RENT" && (
           <span className="text-muted-foreground">/month</span>
         )}
+
       </div>
     </div>
   )

@@ -1,4 +1,5 @@
-import type { Listing, Country, Province, Ward } from "@/lib/types";
+import type { Listing, Country, Province, Ward, ChecklistItem } from "@/lib/types";
+
 
 const API_BASE =
   import.meta.env.VITE_API_BASE_LISTING || "http://localhost:8080";
@@ -89,23 +90,26 @@ export interface POIResponse {
   createdAt: string; // OffsetDateTime arrives as an ISO string
 }
 
-export interface ReviewHistoryItem {
+export interface ListingReviewResponse {
   reviewId: string;
-  action: "approved" | "rejected" | "edit_requested";
-  staffId: string;
-  staffName: string;
-  timestamp: string;
-  notes: string;
-  feedback?: string;
-  reason?: string;
+  listingId: string;
+  reviewerId: string;
+  reviewerRole: string;
+  feedbackReportId?: string;
+  previousStatus?: string;
+  newStatus?: string;
+  reviewAction: "APPROVE" | "REJECT" | "REQUEST_CHANGES";
+  staffNotesInternal?: string;
+  feedbackToSeller?: string;
+  rejectionReason?: string;
+  requiredChanges?: { field: string; issue: string; suggestion: string }[];
+  checklistResults?: Record<string, boolean>;
+  isResubmission?: boolean;
+  previousReviewId?: string;
+  reviewVersion?: number;
+  reviewedAt?: string;
 }
 
-export interface ChecklistItem {
-  id: string;
-  label: string;
-  checked: boolean;
-  required: boolean;
-}
 
 export enum DocumentType {
   OWNERSHIP_CERTIFICATE = "OWNERSHIP_CERTIFICATE",
@@ -252,9 +256,10 @@ function mapApiListing(listing: ApiListingResponse): Listing {
     title: listing.title,
     description: listing.description,
     propertyType:
-      (listing.propertyType as Listing["propertyType"]) || "apartment",
+      (listing.propertyType as Listing["propertyType"]) || "APARTMENT",
     transactionType:
-      (listing.listingType as Listing["transactionType"]) || "sale",
+      (listing.listingType as Listing["transactionType"]) || "SALE",
+
     price: listing.price ?? 0,
     area: listing.areaSqm ?? 0,
     bedrooms: listing.bedrooms ?? 0,
@@ -295,9 +300,10 @@ function mapApiListing(listing: ApiListingResponse): Listing {
       })) || [],
     listingType: "",
     mediaType: "photos_only",
-    areaSqm: 0,
+    areaSqm: listing.areaSqm ?? 0,
     features: [],
-    status: (listing.status as Listing["status"]) || "draft",
+    status: (listing.status as Listing["status"]) || "DRAFT",
+
     sellerId: listing.userId || "",
     seller: {
       id: listing.userId || "",
@@ -314,8 +320,10 @@ function mapApiListing(listing: ApiListingResponse): Listing {
     direction: undefined,
     legalStatus: undefined,
     featuredImageUrl: listing.featuredImageUrl ?? undefined,
+    submittedAt: listing.submittedAt,
   };
 }
+
 
 export async function listSellerListings(): Promise<Listing[]> {
   const data = await fetchJson<{
@@ -642,21 +650,6 @@ export async function approveListing(
   );
 }
 
-export async function requestEditListing(
-  listingId: string,
-  feedback: string,
-  staffNotes: string,
-  issues: string[],
-): Promise<void> {
-  await fetchJson<void>(
-    `${API_BASE}/api/v1/staff/listings/${listingId}/request-edit`,
-    {
-      method: "POST",
-      body: JSON.stringify({ feedback, staffNotes, issues }),
-    },
-  );
-}
-
 export async function rejectListing(
   listingId: string,
   reason: string,
@@ -667,45 +660,51 @@ export async function rejectListing(
     `${API_BASE}/api/v1/staff/listings/${listingId}/reject`,
     {
       method: "POST",
-      body: JSON.stringify({ reason, feedback, staffNotes }),
+      body: JSON.stringify({
+        rejectionReason: reason,
+        feedbackToSeller: feedback,
+        staffNotesInternal: staffNotes,
+      }),
     },
   );
 }
 
 export async function getReviewHistory(
   listingId: string,
-): Promise<ReviewHistoryItem[]> {
-  return fetchJson<ReviewHistoryItem[]>(
+): Promise<ListingReviewResponse[]> {
+  return fetchJson<ListingReviewResponse[]>(
     `${API_BASE}/api/v1/staff/listings/${listingId}/review-history`,
   );
 }
 
-export async function saveStaffNotes(
-  listingId: string,
-  notes: string,
-): Promise<void> {
-  // await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/notes`, {
-  //   method: "PUT",
-  //   body: JSON.stringify({ notes }),
-  // })
-}
 
-export async function updateChecklist(
-  listingId: string,
-  checklist: ChecklistItem[],
-): Promise<void> {
-  // await fetchJson<void>(`${API_BASE}/api/v1/staff/listings/${listingId}/checklist`, {
-  //   method: "PUT",
-  //   body: JSON.stringify({ checklist }),
-  // })
-}
-
-export async function getPendingReviewListings(): Promise<Listing[]> {
+export async function getPendingReviews(): Promise<Listing[]> {
   const data = await fetchJson<{
     content?: ApiListingResponse[];
     data?: ApiListingResponse[];
     items?: ApiListingResponse[];
-  }>(`${API_BASE}/api/v1/staff/listings/pending`);
+  }>(`${API_BASE}/api/v1/staff/listings/pending-reviews`);
+  const items = data.content || data.data || data.items || Array.isArray(data) ? data as any as ApiListingResponse[] : [];
+  return items.map(mapApiListing);
+}
+
+export async function getMyReviews(): Promise<Listing[]> {
+  const data = await fetchJson<{
+    content?: ApiListingResponse[];
+    data?: ApiListingResponse[];
+    items?: ApiListingResponse[];
+  }>(`${API_BASE}/api/v1/staff/listings/my-reviews`);
+  const items = data.content || data.data || data.items || Array.isArray(data) ? data as any as ApiListingResponse[] : [];
+  return items.map(mapApiListing);
+}
+
+export async function getPendingReviewListings(page = 0, size = 50): Promise<Listing[]> {
+  const data = await fetchJson<{
+    content?: ApiListingResponse[];
+    data?: ApiListingResponse[];
+    items?: ApiListingResponse[];
+  }>(`${API_BASE}/api/v1/staff/listings/pending?page=${page}&size=${size}`);
   const items = data.content || data.data || data.items || [];
   return items.map(mapApiListing);
 }
+

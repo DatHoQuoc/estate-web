@@ -22,19 +22,18 @@ import { toast } from "sonner";
 import { mockStaffUser, mockChecklist } from "@/lib/mock-data";
 import type { ChecklistItem, AICheck, Listing } from "@/lib/types";
 import type { FeedbackResponse } from "@/lib/report-service-type";
-import type { ReviewHistoryItem, TourSceneResponse } from "@/lib/api-client";
+import type { TourSceneResponse, ListingReviewResponse } from "@/lib/api-client";
 import { getFeedbackByListing } from "@/lib/report-service-api";
+
 import {
   getListingDetails,
   approveListing,
-  requestEditListing,
   rejectListing,
   getReviewHistory,
-  saveStaffNotes,
-  updateChecklist,
   getAllListingAmenities,
 } from "@/lib/api-client";
 import { getListingImages, getListingVideos, getVirtualTour } from "@/lib/api-client";
+
 import { VirtualTourPreview } from "@components/virtual-tour/VirtualTourPreview";
 import { useSearchParams } from "react-router-dom";
 import { VirtualTourEditor } from "@/components/virtual-tour/VirtualTourEditor";
@@ -76,8 +75,9 @@ export default function StaffReviewDetailPage() {
   const [staffNotes, setStaffNotes] = useState("");
   const [feedbackToSeller, setfeedbackToSeller] = useState("");
   const [checks, setChecks] = useState<AICheck[]>([]);
-  const [reviewHistory, setReviewHistory] = useState<ReviewHistoryItem[]>([]);
+  const [reviewHistory, setReviewHistory] = useState<ListingReviewResponse[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [saving, setSaving] = useState(false);
   const [searchParams] = useSearchParams();
   const [initialScenes, setInitialScenes] = useState<TourSceneResponse[]>([]);
@@ -89,13 +89,14 @@ export default function StaffReviewDetailPage() {
       try {
         setLoading(true);
 
-        const [listingData, feedbacks, images] = await Promise.all([
+        const [listingData, feedbacks, history, images] = await Promise.all([
           getListingDetails(listingId),
           getFeedbackByListing(listingId),
-          //getReviewHistory(listingId),
+          getReviewHistory(listingId),
           getListingImages(listingId),
           //getListingVideos(listingId),
         ]);
+
 
         const mappedAmenities = listingData.amenities.map((a) => ({
           amenityId: a.amenityId,
@@ -130,7 +131,8 @@ export default function StaffReviewDetailPage() {
 
         const aiChecks = mapFeedbackToAIChecks(feedbacks);
         setChecks(aiChecks);
-        //setReviewHistory(history)
+        setReviewHistory(history);
+
       } catch (error) {
         console.error("Failed to load data:", error);
         toast.error("Failed to approve listing");
@@ -141,19 +143,7 @@ export default function StaffReviewDetailPage() {
     loadData();
   }, [listingId, toast]);
 
-  useEffect(() => {
-    const autoSave = setTimeout(async () => {
-      if (staffNotes && !saving) {
-        try {
-          await saveStaffNotes(listingId, staffNotes);
-        } catch (error) {
-          console.error("Failed to auto-save notes:", error);
-        }
-      }
-    }, 2000);
 
-    return () => clearTimeout(autoSave);
-  }, [staffNotes, listingId, saving]);
   const loadTour = async () => {
     setLoading(true);
     try {
@@ -176,13 +166,8 @@ export default function StaffReviewDetailPage() {
   const handleCheckChange = async (id: string, checked: boolean) => {
     const updatedChecklist = checklist.map((item) => (item.id === id ? { ...item, checked } : item));
     setChecklist(updatedChecklist);
-
-    try {
-      await updateChecklist(listingId, updatedChecklist);
-    } catch (error) {
-      console.error("Failed to save checklist:", error);
-    }
   };
+
 
   const handleApprove = async () => {
     try {
@@ -202,15 +187,13 @@ export default function StaffReviewDetailPage() {
   const handleRequestEdit = async (feedback: string) => {
     try {
       setSaving(true);
-      const issues = checklist.filter((item) => !item.checked && item.required).map((item) => item.label);
-
-      await requestEditListing(listingId, feedback, staffNotes, issues);
-      toast.success("Listing approved successfully");
+      await rejectListing(listingId, "Needs Edit", feedback, staffNotes);
+      toast.success("Listing flagged for edits successfully");
 
       navigate("/staff");
     } catch (error) {
       console.error("Failed to request edit:", error);
-      toast.error("Failed to approve listing");
+      toast.error("Failed to flag for edits");
     } finally {
       setSaving(false);
     }
@@ -220,16 +203,17 @@ export default function StaffReviewDetailPage() {
     try {
       setSaving(true);
       await rejectListing(listingId, reason, feedback, staffNotes);
-      toast.success("Listing approved successfully");
+      toast.success("Listing rejected successfully");
 
       navigate("/staff");
     } catch (error) {
       console.error("Failed to reject:", error);
-      toast.error("Failed to approve listing");
+      toast.error("Failed to reject listing");
     } finally {
       setSaving(false);
     }
   };
+
 
   const handleExportReport = () => {
     const report = {

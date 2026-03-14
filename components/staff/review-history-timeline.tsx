@@ -3,13 +3,14 @@
 
 import { Clock, CheckCircle, XCircle, Edit } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { ReviewHistoryItem } from "@/lib/api-client"
+import type { ListingReviewResponse } from "@/lib/api-client"
 
 interface ReviewHistoryTimelineProps {
-  history: ReviewHistoryItem[]
+  history: ListingReviewResponse[]
 }
 
 export function ReviewHistoryTimeline({ history }: ReviewHistoryTimelineProps) {
+
   if (history.length === 0) {
     return (
       <Card>
@@ -23,27 +24,32 @@ export function ReviewHistoryTimeline({ history }: ReviewHistoryTimelineProps) {
     )
   }
 
-  const getIcon = (action: ReviewHistoryItem["action"]) => {
+  const getIcon = (action: ListingReviewResponse["reviewAction"]) => {
     switch (action) {
-      case "approved":
+      case "APPROVE":
         return <CheckCircle className="h-5 w-5 text-green-500" />
-      case "rejected":
+      case "REJECT":
         return <XCircle className="h-5 w-5 text-red-500" />
-      case "edit_requested":
+      case "REQUEST_CHANGES":
         return <Edit className="h-5 w-5 text-orange-500" />
+      default:
+        return <Clock className="h-5 w-5 text-gray-500" />
     }
   }
 
-  const getActionText = (action: ReviewHistoryItem["action"]) => {
+  const getActionText = (action: ListingReviewResponse["reviewAction"]) => {
     switch (action) {
-      case "approved":
+      case "APPROVE":
         return "Approved"
-      case "rejected":
+      case "REJECT":
         return "Rejected"
-      case "edit_requested":
+      case "REQUEST_CHANGES":
         return "Edit Requested"
+      default:
+        return "Reviewed"
     }
   }
+
 
   return (
     <Card>
@@ -55,35 +61,35 @@ export function ReviewHistoryTimeline({ history }: ReviewHistoryTimelineProps) {
           {history.map((item, index) => (
             <div key={item.reviewId} className="flex gap-3">
               <div className="flex flex-col items-center">
-                {getIcon(item.action)}
+                {getIcon(item.reviewAction)}
                 {index < history.length - 1 && (
                   <div className="w-px h-full bg-border mt-2" />
                 )}
               </div>
               <div className="flex-1 pb-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm">{getActionText(item.action)}</span>
+                  <span className="font-medium text-sm">{getActionText(item.reviewAction)}</span>
                   <span className="text-xs text-muted-foreground">
-                    by {item.staffName}
+                    by {item.reviewerRole}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
                   <Clock className="h-3 w-3" />
-                  {new Date(item.timestamp).toLocaleString()}
+                  {item.reviewedAt ? new Date(item.reviewedAt).toLocaleString() : "Unknown date"}
                 </p>
-                {item.notes && (
+                {item.staffNotesInternal && (
                   <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
-                    {item.notes}
+                    Notes: {item.staffNotesInternal}
                   </p>
                 )}
-                {item.feedback && (
+                {item.feedbackToSeller && (
                   <p className="text-sm text-muted-foreground bg-muted p-2 rounded mt-2">
-                    Feedback: {item.feedback}
+                    Feedback: {item.feedbackToSeller}
                   </p>
                 )}
-                {item.reason && (
+                {item.rejectionReason && (
                   <p className="text-sm text-red-600 bg-red-50 p-2 rounded mt-2">
-                    Reason: {item.reason}
+                    Reason: {item.rejectionReason}
                   </p>
                 )}
               </div>

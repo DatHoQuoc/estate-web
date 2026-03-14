@@ -7,39 +7,36 @@ interface StatusBadgeProps {
 }
 
 const statusConfig: Record<ListingStatus, { label: string; className: string }> = {
-  draft: {
+  DRAFT: {
     label: "Draft",
     className: "bg-muted text-muted-foreground",
   },
-  pending_ai_review: {
-    label: "AI Review",
-    className: "bg-amber-500/15 text-amber-700",
-  },
-  ai_rejected: {
-    label: "AI Rejected",
-    className: "bg-destructive/15 text-destructive",
-  },
-  pending_staff_review: {
-    label: "Staff Review",
+  PENDING_REVIEW: {
+    label: "Pending Review",
     className: "bg-blue-500/15 text-blue-700",
   },
-  staff_rejected: {
-    label: "Rejected",
-    className: "bg-destructive/15 text-destructive",
-  },
-  published: {
+  PUBLISHED: {
     label: "Published",
     className: "bg-emerald-500/15 text-emerald-700",
   },
-  paused: {
-    label: "Paused",
+  REJECTED: {
+    label: "Rejected",
+    className: "bg-destructive/15 text-destructive",
+  },
+  EXPIRED: {
+    label: "Expired",
     className: "bg-muted text-muted-foreground",
   },
-  sold: {
-    label: "Sold",
-    className: "bg-primary/15 text-primary",
+  ARCHIVED: {
+    label: "Archived",
+    className: "bg-muted text-muted-foreground",
+  },
+  DELETED: {
+    label: "Deleted",
+    className: "bg-destructive/15 text-destructive",
   },
 }
+
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
   const config = statusConfig[status]

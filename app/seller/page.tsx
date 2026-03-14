@@ -37,11 +37,12 @@ import { cn } from "@/lib/utils";
 
 const statusFilterOptions = [
   { value: "all", label: "All Status" },
-  { value: "published", label: "Published" },
-  { value: "pending_staff_review", label: "Pending Review" },
-  { value: "ai_rejected", label: "AI Rejected" },
-  { value: "draft", label: "Draft" },
+  { value: "PUBLISHED", label: "Published" },
+  { value: "PENDING_REVIEW", label: "Pending Review" },
+  { value: "REJECTED", label: "Rejected" },
+  { value: "DRAFT", label: "Draft" },
 ];
+
 
 function SellerDashboardContent() {
   const navigate = useNavigate();
@@ -94,15 +95,12 @@ function SellerDashboardContent() {
 
   const listingStats = useMemo(() => {
     const total = listings.length;
-    const published = listings.filter((l) => l.status === "published").length;
-    const pending = listings.filter((l) =>
-      l.status?.includes("pending"),
-    ).length;
-    const rejected = listings.filter(
-      (l) => l.status?.includes("rejected") || l.status === "ai_rejected",
-    ).length;
+    const published = listings.filter((l) => l.status === "PUBLISHED").length;
+    const pending = listings.filter((l) => l.status === "PENDING_REVIEW").length;
+    const rejected = listings.filter((l) => l.status === "REJECTED").length;
     return { total, published, pending, rejected };
   }, [listings]);
+
 
   const handleView = (id: string) => {
     navigate(`/seller/listings/${id}`);
@@ -145,24 +143,20 @@ function SellerDashboardContent() {
       string,
       { bg: string; text: string; label: string }
     > = {
-      published: {
+      PUBLISHED: {
         bg: "bg-emerald-100",
         text: "text-emerald-700",
         label: "Published",
       },
-      pending_review: {
+      PENDING_REVIEW: {
         bg: "bg-amber-100",
         text: "text-amber-700",
         label: "Pending Review",
       },
-      draft: { bg: "bg-gray-100", text: "text-gray-700", label: "Draft" },
-      ai_rejected: {
-        bg: "bg-red-100",
-        text: "text-red-700",
-        label: "AI Rejected",
-      },
-      rejected: { bg: "bg-red-100", text: "text-red-700", label: "Rejected" },
+      DRAFT: { bg: "bg-gray-100", text: "text-gray-700", label: "Draft" },
+      REJECTED: { bg: "bg-red-100", text: "text-red-700", label: "Rejected" },
     };
+
 
     const variant = variants[status] || variants.draft;
     return (
@@ -312,8 +306,9 @@ function SellerDashboardContent() {
                           ${listing.price.toLocaleString()}
                         </td>
                         <td className="px-6 py-4">
-                          {getStatusBadge(listing.status.toLocaleLowerCase())}
+                          {getStatusBadge(listing.status)}
                         </td>
+
                         <td className="px-6 py-4 text-sm text-muted-foreground">
                           {new Date(listing.createdAt).toLocaleDateString()}
                         </td>
@@ -336,7 +331,7 @@ function SellerDashboardContent() {
                                 View
                               </DropdownMenuItem>
 
-                              {listing.status.toLowerCase() === "draft" && (
+                              {listing.status === "DRAFT" && (
                                 <>
                                   <DropdownMenuItem
                                     onClick={() => handleEdit(listing.id)}
@@ -359,17 +354,16 @@ function SellerDashboardContent() {
                                 </>
                               )}
 
-                              {listing.status.toLowerCase() ===
-                                "pending_review" && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleUnpublish(listing.id)}
-                                  >
-                                    <RotateCcw className="mr-2 h-4 w-4" />
-                                    Withdraw
-                                  </DropdownMenuItem>
-                                )}
+                              {listing.status === "PENDING_REVIEW" && (
+                                <DropdownMenuItem
+                                  onClick={() => handleUnpublish(listing.id)}
+                                >
+                                  <RotateCcw className="mr-2 h-4 w-4" />
+                                  Withdraw
+                                </DropdownMenuItem>
+                              )}
 
-                              {listing.status.toLowerCase() === "draft" && (
+                              {listing.status === "DRAFT" && (
                                 <>
                                   <DropdownMenuItem
                                     onClick={() => handleUnpublish(listing.id)}
@@ -393,23 +387,23 @@ function SellerDashboardContent() {
                                 </>
                               )}
 
-                              {(listing.status.toLowerCase() === "rejected" ||
-                                listing.status === "staff_rejected") && (
-                                  <>
-                                    <DropdownMenuItem
-                                      onClick={() => handleEdit(listing.id)}
-                                    >
-                                      <Edit className="mr-2 h-4 w-4" />
-                                      Edit & Resubmit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleDelete(listing.id)}
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
+                              {listing.status === "REJECTED" && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => handleEdit(listing.id)}
+                                  >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit & Resubmit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDelete(listing.id)}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>

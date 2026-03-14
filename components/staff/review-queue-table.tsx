@@ -253,7 +253,8 @@ export function ReviewQueueTable({
                       <Eye className="h-4 w-4 mr-1" />
                       View
                     </Button>
-                    {!isAssigned && (
+                    {!isAssigned && listing.status !== "PUBLISHED" && (
+
                       <Button
                         size="sm"
                         onClick={() => onClaim?.(listing.id)}
@@ -262,6 +263,7 @@ export function ReviewQueueTable({
                         Claim
                       </Button>
                     )}
+
                   </div>
                 </TableCell>
               </TableRow>
