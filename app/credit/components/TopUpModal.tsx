@@ -176,7 +176,7 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose }) => {
         {modalState === "payos" && checkoutUrl && (
           <iframe
             src={checkoutUrl}
-            className="w-full h-full border-none"
+            className="w-full h-full border-none bg-white"
             allow="payment *"
           />
         )}

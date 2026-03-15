@@ -101,7 +101,7 @@ export const Dashboard = () => {
                 size="lg"
               >
                 <TrendingUp size={16} className="mr-2" />
-                Mua thêm Credit
+                Nạp thêm tiền
               </Button>
             </div>
           </CardContent>
@@ -141,7 +141,7 @@ export const Dashboard = () => {
             {isAiLimitReached ? (
               <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
                 <Info size={15} className="shrink-0 mt-0.5" />
-                <span>Bạn đã dùng hết lượt miễn phí. Mỗi tin nhắn tiếp theo sẽ bị trừ <strong>1 credit</strong>.</span>
+                <span>Bạn đã dùng hết lượt miễn phí. Mỗi tin nhắn tiếp theo sẽ bị trừ <strong>1.000 ₫</strong>.</span>
               </div>
             ) : (
               <div className="flex items-center gap-2 text-sm text-muted-foreground rounded-lg bg-muted/50 px-3 py-2.5">

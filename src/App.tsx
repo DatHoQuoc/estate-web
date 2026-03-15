@@ -37,6 +37,9 @@ import AdminListingsPage from "@app/admin/listings/page";
 import AdminUsersPage from "@app/admin/users/page";
 import { Toaster } from "react-hot-toast";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import ReconciliationPage from "@app/finance/reconciliation/page"
+import AuditPage from "@app/finance/audit/page";
+import ReportPage from "@app/finance/reports/[id]/page";
 
 function App() {
   return (
@@ -76,10 +79,11 @@ function App() {
               <Route path="/staff" element={<ProtectedRoute><StaffDashboardPage /></ProtectedRoute>} />
               <Route path="/staff/review" element={<ProtectedRoute><StaffReviewQueuePage /></ProtectedRoute>} />
               <Route path="/staff/review/:id" element={<ProtectedRoute><StaffReviewDetailPage /></ProtectedRoute>} />
-              <Route path="/staff/my-reviews" element={<ProtectedRoute><StaffMyReviewsPage /></ProtectedRoute>} />
-              <Route path="/staff/analytics" element={<ProtectedRoute><StaffAnalyticsPage /></ProtectedRoute>} />
-              <Route path="/staff/sellers" element={<ProtectedRoute><StaffSellersPage /></ProtectedRoute>} />
-              <Route path="/staff/settings" element={<ProtectedRoute><StaffSettingsPage /></ProtectedRoute>} />
+              {/* Finance Routes */}
+              <Route path="/finance" element={<Navigate to="/finance/reconciliation" replace />} />
+              <Route path="/finance/reconciliation" element={<ReconciliationPage />} />
+              <Route path="/finance/audit" element={<AuditPage />} />
+              <Route path="/finance/reports/:id" element={<ReportPage />} />
             </Route>
 
             <Route path="*" element={<HomePage />} />
