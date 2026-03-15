@@ -1,5 +1,6 @@
 "use client";
 
+import type { KeyboardEvent } from "react";
 import { Bed, Bath, MapPin, Sparkles, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 interface ListingCardProps {
   listing: Listing;
+  onCardClick?: (id: string) => void;
   onView?: (id: string) => void;
   onConnect?: (id: string) => void;
   onAskAI?: (id: string) => void;
@@ -21,11 +23,29 @@ function formatPrice(value?: number) {
   return `${value} VND`;
 }
 
-export function ListingCard({ listing, onView, onConnect, onAskAI, highlight }: ListingCardProps) {
+export function ListingCard({ listing, onCardClick, onView, onConnect, onAskAI, highlight }: ListingCardProps) {
   const cover = listing.images?.find((img) => img.isCover) || listing.images?.[0];
 
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!onCardClick) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onCardClick(listing.id);
+    }
+  };
+
   return (
-    <Card className={cn("overflow-hidden border-border pt-0", highlight && "ring-2 ring-primary/60")}>
+    <Card
+      className={cn(
+        "overflow-hidden border-border pt-0",
+        highlight && "ring-2 ring-primary/60",
+        onCardClick && "cursor-pointer",
+      )}
+      onClick={onCardClick ? () => onCardClick(listing.id) : undefined}
+      onKeyDown={onCardClick ? handleCardKeyDown : undefined}
+      role={onCardClick ? "button" : undefined}
+      tabIndex={onCardClick ? 0 : undefined}
+    >
       {cover && (
         <div className="relative aspect-video text-white">
           <img src={cover.url} alt={cover.alt || listing.title} className="w-full h-full object-cover" />
@@ -74,13 +94,22 @@ export function ListingCard({ listing, onView, onConnect, onAskAI, highlight }: 
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button className="flex-1" onClick={() => onView?.(listing.id)}>
+          <Button className="flex-1" onClick={(event) => {
+            event.stopPropagation();
+            onView?.(listing.id);
+          }}>
             View details
           </Button>
-          <Button variant="secondary" className="flex-1" onClick={() => onConnect?.(listing.id)}>
+          <Button variant="secondary" className="flex-1" onClick={(event) => {
+            event.stopPropagation();
+            onConnect?.(listing.id);
+          }}>
             Connect with broker
           </Button>
-          <Button variant="outline" className="sm:w-auto" onClick={() => onAskAI?.(listing.id)}>
+          <Button variant="outline" className="sm:w-auto" onClick={(event) => {
+            event.stopPropagation();
+            onAskAI?.(listing.id);
+          }}>
             <Sparkles className="h-4 w-4 mr-1" /> Ask AI
           </Button>
         </div>

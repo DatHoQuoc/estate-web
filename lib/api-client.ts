@@ -10,6 +10,9 @@ const AUTH_API_BASE =
 const ESTATE_SEARCH_API_BASE =
   import.meta.env.VITE_API_BASE_ESTATE_SEARCH || API_BASE;
 
+const CREDIT_API_BASE =
+  import.meta.env.VITE_TRANSACTION_API_BASE_URL || "http://localhost:8086/api/v1";
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -170,6 +173,32 @@ export interface PublicUserProfileResponse {
   avatar_url: string | null;
 }
 
+export type AdminCreditSettingKey =
+  | "POST_COST_BASIC"
+  | "POST_COST_PREMIUM_ADD"
+  | "AI_CHAT_FREE_LIMIT"
+  | "AI_CHAT_COST_PER_MSG";
+
+export interface AdminCreditSetting {
+  settingKey: AdminCreditSettingKey;
+  value: number;
+  description?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export interface UpdateAdminCreditSettingPayload {
+  value: number;
+  description?: string;
+}
+
+export interface BulkAdminCreditSettingsPayload {
+  postCostBasic: number;
+  postCostPremiumAdd: number;
+  aiChatFreeLimit: number;
+  aiChatCostPerMsg: number;
+}
+
 export interface POIResponse {
   poiId: string;
   listingId: string;
@@ -242,6 +271,54 @@ export interface ChatListingPublishedMessage {
   publishedAt: number;
   expiredAt: number | null;
   freePost: boolean;
+}
+
+interface DiscoverSearchListingItem {
+  id?: string;
+  title?: string;
+  description?: string;
+  propertyType?: string;
+  transactionType?: string;
+  listingType?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  location?: {
+    country?: string;
+    province?: string;
+    district?: string;
+    ward?: string;
+    streetAddress?: string;
+    coordinates?: {
+      lat?: number;
+      lng?: number;
+    };
+  };
+  propertyDetails?: {
+    bedrooms?: number;
+    bathrooms?: number;
+    areaSqm?: number;
+    yearBuilt?: number;
+    floorNumber?: number;
+    features?: string[];
+  };
+  pricing?: {
+    price?: number;
+  };
+  media?: {
+    images?: Array<{
+      id?: string;
+      url?: string;
+      thumbnailUrl?: string;
+      alt?: string;
+      isCover?: boolean;
+      order?: number;
+    }>;
+  };
+}
+
+export interface DiscoverListingsSearchParams {
+  text?: string;
 }
 
 export interface ChatReplyDto {
@@ -531,6 +608,252 @@ function mapApiListing(listing: ApiListingResponse): Listing {
   };
 }
 
+function parseImageUrlFromUnknown(value: unknown): string {
+  if (!isRecord(value)) return "";
+  const raw = value.url ?? value.imageUrl;
+  return typeof raw === "string" ? raw : "";
+}
+
+function toIsoDate(value: number | string | undefined): string | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return new Date(value).toISOString();
+  }
+  if (typeof value === "string" && value.trim()) {
+    return value;
+  }
+  return undefined;
+}
+
+function extractTextField(document: string | undefined, field: string): string {
+  if (!document) return "";
+  const regex = new RegExp(`${field}\\s*:\\s*([^\\n]+)`, "i");
+  const match = document.match(regex);
+  return match?.[1]?.trim() || "";
+}
+
+function parseImageUrlsFromMetadata(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw.filter((value): value is string => typeof value === "string");
+  }
+
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((value): value is string => typeof value === "string");
+      }
+    } catch {
+      const urlMatches = raw.match(/https?:\/\/[^\s"'\\]+/g);
+      return urlMatches || [];
+    }
+  }
+
+  return [];
+}
+
+function parseListingIdFromResultId(resultId: unknown): string {
+  if (typeof resultId !== "string") return "";
+  const imageIdMatch = resultId.match(/^(.+)-img-\d+$/);
+  return imageIdMatch ? imageIdMatch[1] : resultId;
+}
+
+function toNumberValue(value: unknown, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const normalized = value.replace(/[^\d.-]/g, "");
+    const parsed = Number(normalized);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
+function mapVectorSearchResponseToListings(response: unknown): Listing[] {
+  if (!isRecord(response) || !isRecord(response.results)) return [];
+
+  const results = response.results;
+  const metadataGroups = Array.isArray(results.metadatas) ? results.metadatas : [];
+  const documentGroups = Array.isArray(results.documents) ? results.documents : [];
+  const idGroups = Array.isArray(results.ids) ? results.ids : [];
+
+  const metadataItems = Array.isArray(metadataGroups[0]) ? metadataGroups[0] : [];
+  const documentItems = Array.isArray(documentGroups[0]) ? documentGroups[0] : [];
+  const idItems = Array.isArray(idGroups[0]) ? idGroups[0] : [];
+  const maxLen = Math.max(metadataItems.length, documentItems.length, idItems.length);
+
+  const byListingId = new Map<string, Listing>();
+
+  for (let index = 0; index < maxLen; index += 1) {
+    const metadata = isRecord(metadataItems[index]) ? metadataItems[index] : {};
+    const document = typeof documentItems[index] === "string" ? documentItems[index] : "";
+    const resultId = idItems[index];
+
+    const listingIdFromMeta = typeof metadata.listingId === "string" ? metadata.listingId : "";
+    const listingId = listingIdFromMeta || parseListingIdFromResultId(resultId);
+    if (!listingId || byListingId.has(listingId)) continue;
+
+    const title =
+      (typeof metadata.propertyName === "string" ? metadata.propertyName : "") ||
+      extractTextField(document, "Title") ||
+      `Listing ${listingId}`;
+
+    const description = extractTextField(document, "Description");
+    const typeField = extractTextField(document, "Type").toUpperCase();
+    const listingType = typeField.includes("RENT") ? "RENT" : "SALE";
+    let propertyType = "APARTMENT";
+    if (typeField.includes("COMMERCIAL")) propertyType = "COMMERCIAL";
+    else if (typeField.includes("VILLA")) propertyType = "VILLA";
+    else if (typeField.includes("HOUSE")) propertyType = "HOUSE";
+    else if (typeField.includes("LAND")) propertyType = "LAND";
+
+    const price = toNumberValue(metadata.price, toNumberValue(extractTextField(document, "Price"), 0));
+    const address = extractTextField(document, "Address");
+
+    const bedBathLine = document.match(/Bedrooms\s*:\s*(\d+)\s*,\s*Bathrooms\s*:\s*(\d+)/i);
+    const bedrooms = bedBathLine ? Number(bedBathLine[1]) : 0;
+    const bathrooms = bedBathLine ? Number(bedBathLine[2]) : 0;
+
+    const amenitiesText = extractTextField(document, "Amenities");
+    const amenityNames = amenitiesText
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const imageUrls = parseImageUrlsFromMetadata(metadata.images);
+
+    const promptListing: ChatListingPublishedMessage = {
+      listingId,
+      userId: "",
+      title,
+      description,
+      listingType,
+      propertyType,
+      status: 0,
+      price,
+      priceCurrency: "VND",
+      pricePeriod: null,
+      negotiable: false,
+      areaSqm: 0,
+      bedrooms,
+      bathrooms,
+      floors: null,
+      floorNumber: 0,
+      yearBuilt: 0,
+      streetAddress: address,
+      buildingName: null,
+      wardName: "",
+      provinceName: "",
+      countryName: "",
+      latitude: null,
+      longitude: null,
+      featuredImageUrl: imageUrls[0] || "",
+      imagesJson: imageUrls.map((url) => ({ url })),
+      additionalInfoJson: null,
+      viewCount: 0,
+      saveCount: 0,
+      contactCount: 0,
+      creditsLocked: 0,
+      creditsCharged: 0,
+      creditsRefunded: 0,
+      amenityNames,
+      hasVirtualTour: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      submittedAt: Date.now(),
+      publishedAt: Date.now(),
+      expiredAt: null,
+      freePost: false,
+    };
+
+    byListingId.set(listingId, mapPromptListingToListing(promptListing));
+  }
+
+  return Array.from(byListingId.values());
+}
+
+function mapPromptListingToListing(listing: ChatListingPublishedMessage): Listing {
+  const imageUrls = Array.isArray(listing.imagesJson)
+    ? listing.imagesJson
+        .map((item) => parseImageUrlFromUnknown(item))
+        .filter((url): url is string => Boolean(url))
+    : [];
+
+  const apiListing: ApiListingResponse = {
+    listingId: listing.listingId,
+    userId: listing.userId,
+    title: listing.title,
+    description: listing.description,
+    listingType: listing.listingType,
+    propertyType: listing.propertyType,
+    status: "PUBLISHED",
+    price: listing.price,
+    priceCurrency: listing.priceCurrency,
+    pricePeriod: listing.pricePeriod ?? undefined,
+    negotiable: listing.negotiable,
+    areaSqm: listing.areaSqm,
+    bedrooms: listing.bedrooms,
+    bathrooms: listing.bathrooms,
+    floors: listing.floors ?? undefined,
+    floorNumber: listing.floorNumber,
+    yearBuilt: listing.yearBuilt,
+    streetAddress: listing.streetAddress,
+    buildingName: listing.buildingName ?? undefined,
+    wardId: listing.wardName,
+    provinceId: listing.provinceName,
+    countryId: listing.countryName,
+    latitude: listing.latitude ?? undefined,
+    longitude: listing.longitude ?? undefined,
+    featuredImageUrl: listing.featuredImageUrl,
+    imageUrls,
+    viewCount: listing.viewCount,
+    saveCount: listing.saveCount,
+    contactCount: listing.contactCount,
+    createdAt: toIsoDate(listing.createdAt),
+    updatedAt: toIsoDate(listing.updatedAt),
+    submittedAt: toIsoDate(listing.submittedAt),
+    publishedAt: toIsoDate(listing.publishedAt),
+    expiredAt: toIsoDate(listing.expiredAt ?? undefined),
+    amenities: listing.amenityNames.map((name, index) => ({
+      amenityId: `amenity-${index}`,
+      amenityName: name,
+      amenityCategory: "OTHER",
+      iconUrl: "",
+    })),
+  };
+
+  return mapApiListing(apiListing);
+}
+
+function mapDiscoverSearchItemToListing(item: DiscoverSearchListingItem): Listing | null {
+  if (!item.id || !item.title) return null;
+
+  const apiListing: ApiListingResponse = {
+    listingId: item.id,
+    title: item.title,
+    description: item.description || "",
+    propertyType: item.propertyType,
+    listingType: item.transactionType || item.listingType,
+    status: item.status || "PUBLISHED",
+    price: item.pricing?.price,
+    areaSqm: item.propertyDetails?.areaSqm,
+    bedrooms: item.propertyDetails?.bedrooms,
+    bathrooms: item.propertyDetails?.bathrooms,
+    floorNumber: item.propertyDetails?.floorNumber,
+    yearBuilt: item.propertyDetails?.yearBuilt,
+    streetAddress: item.location?.streetAddress,
+    wardId: item.location?.ward,
+    provinceId: item.location?.province,
+    countryId: item.location?.country,
+    latitude: item.location?.coordinates?.lat,
+    longitude: item.location?.coordinates?.lng,
+    featuredImageUrl: item.media?.images?.find((img) => img.isCover)?.url || item.media?.images?.[0]?.url,
+    imageUrls: item.media?.images?.map((img) => img.url || "").filter((url): url is string => Boolean(url)),
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  };
+
+  return mapApiListing(apiListing);
+}
+
 
 export async function listSellerListings(): Promise<Listing[]> {
   const data = await fetchJson<{
@@ -574,6 +897,51 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
   return fetchJson<PublicUserProfileResponse>(
     `${AUTH_API_BASE}/users/${userId}/profile`,
   );
+}
+
+export async function getAdminCreditSettings(): Promise<AdminCreditSetting[]> {
+  return fetchJson<AdminCreditSetting[]>(`${CREDIT_API_BASE}/admin/credit-settings`);
+}
+
+export async function getAdminCreditSetting(
+  key: AdminCreditSettingKey,
+): Promise<AdminCreditSetting> {
+  return fetchJson<AdminCreditSetting>(`${CREDIT_API_BASE}/admin/credit-settings/${key}`);
+}
+
+export async function updateAdminCreditSetting(
+  key: AdminCreditSettingKey,
+  payload: UpdateAdminCreditSettingPayload,
+): Promise<AdminCreditSetting> {
+  return fetchJson<AdminCreditSetting>(`${CREDIT_API_BASE}/admin/credit-settings/${key}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function bulkUpdateAdminCreditSettings(
+  payload: BulkAdminCreditSettingsPayload,
+): Promise<AdminCreditSetting[]> {
+  return fetchJson<AdminCreditSetting[]>(`${CREDIT_API_BASE}/admin/credit-settings/bulk`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function resetDailyAiChatCountForUser(userId: string): Promise<void> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+  const res = await fetch(`${CREDIT_API_BASE}/admin/credit-settings/ai-chat/reset-daily/${userId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || `Request failed with status ${res.status}`);
+  }
 }
 
 export async function recordListingView(listingId: string): Promise<void> {
@@ -822,6 +1190,42 @@ export async function searchListingsByPrompt(
   }
 
   return [];
+}
+
+export async function searchDiscoverListings(
+  params: DiscoverListingsSearchParams,
+): Promise<Listing[]> {
+  const payload: Record<string, unknown> = {
+    text: params.text || "",
+  };
+
+  const response = await fetchJson<unknown>(
+    `${ESTATE_SEARCH_API_BASE}/listings/search`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+
+  const vectorResults = mapVectorSearchResponseToListings(response);
+  if (vectorResults.length > 0) return vectorResults;
+
+  const candidates = Array.isArray(response)
+    ? response
+    : isRecord(response)
+      ? [response.listings, response.data, response.items, response.content].find(Array.isArray) || []
+      : [];
+
+  if (!Array.isArray(candidates)) return [];
+
+  const promptStyleResults = candidates
+    .filter((item): item is ChatListingPublishedMessage => isRecord(item) && typeof item.listingId === "string")
+    .map(mapPromptListingToListing);
+  if (promptStyleResults.length > 0) return promptStyleResults;
+
+  return candidates
+    .map((item) => mapDiscoverSearchItemToListing(item as DiscoverSearchListingItem))
+    .filter((item): item is Listing => Boolean(item));
 }
 
 export async function createChatSession(): Promise<ChatSessionResponseDto> {

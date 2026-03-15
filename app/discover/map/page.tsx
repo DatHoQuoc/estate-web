@@ -1,20 +1,20 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { DiscoveryFilters } from "@/components/buyer/discovery-filters"
 import { MapResults } from "@/components/buyer/map-results"
 import { NaturalLanguageSearch } from "@/components/buyer/nl-search"
 import { Button } from "@/components/ui/button"
-import { listPublishedListings } from "@/lib/api-client"
+import { listPublishedListings, searchDiscoverListings } from "@/lib/api-client"
 import type { Listing } from "@/lib/types"
 
 export default function MapDiscoveryPage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const initialQuery = params.get("q") || ""
+  const queryFromUrl = params.get("q") || ""
 
-  const [query, setQuery] = useState(initialQuery)
+  const [query, setQuery] = useState(queryFromUrl)
   const [propertyType, setPropertyType] = useState("all")
   const [minPrice, setMinPrice] = useState("")
   const [maxPrice, setMaxPrice] = useState("")
@@ -24,11 +24,32 @@ export default function MapDiscoveryPage() {
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshToken, setRefreshToken] = useState(0)
+  const reloadTimerRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    setQuery(queryFromUrl)
+  }, [queryFromUrl])
+
+  useEffect(() => {
+    return () => {
+      if (reloadTimerRef.current !== null) {
+        window.clearTimeout(reloadTimerRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     let mounted = true
     setLoading(true)
-    listPublishedListings(0, 200)
+
+    const request = queryFromUrl.trim()
+      ? searchDiscoverListings({
+          text: queryFromUrl,
+        })
+      : listPublishedListings(0, 200)
+
+    request
       .then((data) => {
         if (!mounted) return
         setListings(data)
@@ -46,7 +67,7 @@ export default function MapDiscoveryPage() {
     return () => {
       mounted = false
     }
-  }, [])
+  }, [queryFromUrl, refreshToken])
 
   const filteredListings = useMemo(() => {
     const min = Number(minPrice) || 0
@@ -54,20 +75,47 @@ export default function MapDiscoveryPage() {
     const beds = bedrooms === "any" ? 0 : Number(bedrooms)
 
     const base = listings.filter((listing) => {
-      const matchesQuery = query
-        ? listing.title.toLowerCase().includes(query.toLowerCase()) || listing.description.toLowerCase().includes(query.toLowerCase())
-        : true
-      const matchesType = propertyType === "all" ? true : listing.propertyType === propertyType
+      const matchesType =
+        propertyType === "all"
+          ? true
+          : String(listing.propertyType || "").toLowerCase() === propertyType.toLowerCase()
       const matchesPrice = (listing.price || 0) >= min && (listing.price || 0) <= max
       const matchesBeds = (listing.bedrooms || 0) >= beds
-      return matchesQuery && matchesType && matchesPrice && matchesBeds
+      return matchesType && matchesPrice && matchesBeds
     })
 
     if (sort === "price_low") return [...base].sort((a, b) => (a.price || 0) - (b.price || 0))
     if (sort === "price_high") return [...base].sort((a, b) => (b.price || 0) - (a.price || 0))
     if (sort === "new") return base
     return base
-  }, [listings, query, propertyType, minPrice, maxPrice, bedrooms, sort])
+  }, [listings, propertyType, minPrice, maxPrice, bedrooms, sort])
+
+  const handleSearch = (value: string) => {
+    const normalized = value.trim()
+    setQuery(normalized)
+
+    if (normalized === queryFromUrl.trim()) {
+      setLoading(true)
+      setError(null)
+      if (reloadTimerRef.current !== null) {
+        window.clearTimeout(reloadTimerRef.current)
+      }
+      reloadTimerRef.current = window.setTimeout(() => {
+        setRefreshToken((prev) => prev + 1)
+        reloadTimerRef.current = null
+      }, 1000)
+      return
+    }
+
+    const nextParams = new URLSearchParams(params)
+    if (normalized) {
+      nextParams.set("q", normalized)
+    } else {
+      nextParams.delete("q")
+    }
+
+    navigate(`/discover/map${nextParams.toString() ? `?${nextParams.toString()}` : ""}`)
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,8 +130,8 @@ export default function MapDiscoveryPage() {
         </div>
 
         <NaturalLanguageSearch
-          defaultQuery={initialQuery}
-          onSearch={(value) => setQuery(value)}
+          defaultQuery={queryFromUrl}
+          onSearch={handleSearch}
         />
 
         <DiscoveryFilters

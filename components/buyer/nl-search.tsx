@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 
 interface NaturalLanguageSearchProps {
   defaultQuery?: string
-  onSearch: (query: string) => void
+  onSearch: (text: string) => void
 }
 
 const promptChips = [

@@ -33,6 +33,7 @@ import ProfileSettingsPage from "@app/profile/settings/page";
 import CreditPage from "@app/credit/page";
 import AdminAiUsagePage from "@app/admin/ai-usage/page";
 import AdminAnalyticsPage from "@app/admin/analytics/page";
+import AdminCreditSettingsPage from "@app/admin/credit-settings/page";
 import AdminListingsPage from "@app/admin/listings/page";
 import AdminUsersPage from "@app/admin/users/page";
 import { Toaster } from "react-hot-toast";
@@ -77,6 +78,7 @@ function App() {
               <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsersPage /></ProtectedRoute>} />
               <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={["admin"]}><AdminAnalyticsPage /></ProtectedRoute>} />
               <Route path="/admin/listings" element={<ProtectedRoute allowedRoles={["admin"]}><AdminListingsPage /></ProtectedRoute>} />
+              <Route path="/admin/credit-settings" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCreditSettingsPage /></ProtectedRoute>} />
               <Route path="/admin/ai-usage" element={<ProtectedRoute allowedRoles={["admin"]}><AdminAiUsagePage /></ProtectedRoute>} />
               <Route path="/staff" element={<ProtectedRoute><StaffDashboardPage /></ProtectedRoute>} />
               <Route path="/staff/review" element={<ProtectedRoute><StaffReviewQueuePage /></ProtectedRoute>} />

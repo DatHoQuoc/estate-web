@@ -1,4 +1,4 @@
-import { Bot, BarChart3, LayoutDashboard, ListChecks, Users } from "lucide-react";
+import { Bot, BarChart3, LayoutDashboard, ListChecks, Users, WalletCards } from "lucide-react";
 import { AppSidebar } from "@/components/common/app-sidebar";
 
 const menuItems = [
@@ -25,6 +25,12 @@ const menuItems = [
         label: "Listings Control",
         icon: <ListChecks className="h-5 w-5" />,
         path: "/admin/listings",
+    },
+    {
+        id: "credit-settings",
+        label: "Credit Settings",
+        icon: <WalletCards className="h-5 w-5" />,
+        path: "/admin/credit-settings",
     },
     {
         id: "ai-usage",

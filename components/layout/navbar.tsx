@@ -1,5 +1,6 @@
 "use client";
 
+import { FormEvent, useEffect, useState } from "react";
 import { Bell, ChevronDown, LogOut, MapPinHouse, Settings, Shield, User as UserIcon, Wallet, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +36,7 @@ interface NavbarProps {
 
 export function Navbar({ notificationCount = 5, onNotificationClick, onProfileClick, fixed }: NavbarProps) {
   const { user, logout } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const onLogout = async () => {
     await logout();
@@ -42,6 +44,25 @@ export function Navbar({ notificationCount = 5, onNotificationClick, onProfileCl
   const navigate = useNavigate();
   const location = useLocation();
   const { balance } = useCredit();
+
+  useEffect(() => {
+    const isDiscoverRoute = location.pathname.startsWith("/discover");
+    if (!isDiscoverRoute) return;
+
+    const params = new URLSearchParams(location.search);
+    setSearchQuery(params.get("q") || "");
+  }, [location.pathname, location.search]);
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalized = searchQuery.trim();
+    const params = new URLSearchParams();
+    if (normalized) {
+      params.set("q", normalized);
+    }
+
+    navigate(`/discover/map${params.toString() ? `?${params.toString()}` : ""}`);
+  };
 
   let className = "z-50 shadow-xs bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-border/50";
 
@@ -210,14 +231,20 @@ export function Navbar({ notificationCount = 5, onNotificationClick, onProfileCl
         </div>
 
         {/* Search Bar */}
-        <div className="hidden md:flex flex-1 items-center max-w-md mx-4 relative group">
+        <form
+          className="hidden md:flex flex-1 items-center max-w-md mx-4 relative group"
+          onSubmit={handleSearchSubmit}
+          role="search"
+        >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none z-10" />
           <input
             type="text"
             placeholder="Search properties, agents, or locations..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
             className="flex h-10 w-full rounded-full border border-input bg-muted/40 px-3 py-2 text-sm shadow-sm transition-all placeholder:text-muted-foreground focus-visible:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary pl-10"
           />
-        </div>
+        </form>
 
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           {user ? (

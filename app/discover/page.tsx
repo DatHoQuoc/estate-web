@@ -81,7 +81,7 @@ export default function DiscoveryHomePage() {
               defaultQuery="3 bed homes under 8B VND in District 2"
               onSearch={(value) => {
                 setQuery(value)
-                goToAssistant(value)
+                goToMap(value)
               }}
             />
 
