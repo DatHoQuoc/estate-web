@@ -115,6 +115,8 @@ export interface ReviewListing {
   seller: {
     name: string
     type: "individual" | "broker" | "owner"
+    username?: string
+    role?: string
   }
 
   priority: Priority
@@ -251,6 +253,8 @@ export interface MergedListing {
     seller: {
         name: string;
         type: "individual" | "broker" | "owner";
+    username?: string;
+    role?: string;
     };
 
     priority: Priority;

@@ -40,6 +40,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import ReconciliationPage from "@app/finance/reconciliation/page"
 import AuditPage from "@app/finance/audit/page";
 import ReportPage from "@app/finance/reports/[id]/page";
+import ReportsIndexPage from "@app/finance/reports/page";
+import { FinanceShell } from "@/components/finance/FinanceShell";
 
 function App() {
   return (
@@ -80,10 +82,13 @@ function App() {
               <Route path="/staff/review" element={<ProtectedRoute><StaffReviewQueuePage /></ProtectedRoute>} />
               <Route path="/staff/review/:id" element={<ProtectedRoute><StaffReviewDetailPage /></ProtectedRoute>} />
               {/* Finance Routes */}
-              <Route path="/finance" element={<Navigate to="/finance/reconciliation" replace />} />
-              <Route path="/finance/reconciliation" element={<ReconciliationPage />} />
-              <Route path="/finance/audit" element={<AuditPage />} />
-              <Route path="/finance/reports/:id" element={<ReportPage />} />
+              <Route path="/finance" element={<FinanceShell />}>
+                <Route index element={<Navigate to="reconciliation" replace />} />
+                <Route path="reconciliation" element={<ReconciliationPage />} />
+                <Route path="audit" element={<AuditPage />} />
+                <Route path="reports" element={<ReportsIndexPage />} />
+                <Route path="reports/:id" element={<ReportPage />} />
+              </Route>
             </Route>
 
             <Route path="*" element={<HomePage />} />

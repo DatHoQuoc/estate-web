@@ -208,9 +208,9 @@ export function ReviewQueueTable({
                 </TableCell>
                 <TableCell>
                   <div>
-                    <p className="text-sm font-medium">{listing.seller.name}</p>
+                    <p className="text-sm font-medium">{listing.seller.username || listing.seller.name}</p>
                     <span className="text-xs text-muted-foreground capitalize">
-                      {listing.seller.type}
+                      {listing.seller.role || listing.seller.type}
                     </span>
                   </div>
                 </TableCell>

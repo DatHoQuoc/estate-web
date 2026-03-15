@@ -3,11 +3,13 @@ import {
     AUTH_ENDPOINTS, 
     LoginDto, 
     RegisterDto, 
+    RegisterResponseDto,
     RefreshTokenDto, 
     VerifyEmailDto, 
     AuthResponse, 
     UpdateUserDto, 
     UserResponseDto, 
+    PublicUserProfileDto,
     UserStatsResponseDto,
     UserListQueryDto,
     PaginatedUsersResponseDto,
@@ -98,7 +100,7 @@ export const authClient = {
         return res.data;
     },
 
-    register: async (data: RegisterDto): Promise<any> => {
+    register: async (data: RegisterDto): Promise<RegisterResponseDto> => {
         const res = await authApiClient.post(AUTH_ENDPOINTS.REGISTER, data);
         return res.data;
     },
@@ -158,6 +160,13 @@ export const authClient = {
 
     findOneUser: async (id: string): Promise<UserResponseDto> => {
         const res = await authApiClient.get(`${AUTH_ENDPOINTS.USERS}/${id}`);
+        return res.data;
+    },
+
+    getPublicProfile: async (id: string): Promise<PublicUserProfileDto> => {
+        const res = await authApiClient.get(
+            AUTH_ENDPOINTS.USER_PUBLIC_PROFILE.replace(":id", id),
+        );
         return res.data;
     },
 

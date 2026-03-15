@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ReconciliationSummary } from "@/lib/finance-type";
 import { useNavigate } from "react-router-dom";
+import { FINANCE_ROUTES } from "@/lib/finance-routes";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -94,7 +95,7 @@ export function CrossCheckPanel({ data }: CrossCheckPanelProps) {
             </AlertDialogContent>
           </AlertDialog>
         ) : (
-          <Button variant="destructive" onClick={() => navigate("/finance/transactions")}>
+          <Button variant="destructive" onClick={() => navigate(FINANCE_ROUTES.audit)}>
             <AlertTriangle className="mr-2 h-4 w-4" />
             Review Transactions
           </Button>

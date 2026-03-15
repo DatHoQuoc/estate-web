@@ -4,6 +4,9 @@ import type { Listing, Country, Province, Ward, ChecklistItem } from "@/lib/type
 const API_BASE =
   import.meta.env.VITE_API_BASE_LISTING || "http://localhost:8080";
 
+const AUTH_API_BASE =
+  import.meta.env.VITE_API_BASE_AUTH || "http://localhost:8080/api/v1";
+
 const ESTATE_SEARCH_API_BASE =
   import.meta.env.VITE_API_BASE_ESTATE_SEARCH || API_BASE;
 
@@ -156,6 +159,15 @@ export interface AmenityResponse {
   amenityName: string;
   amenityCategory: string;
   iconUrl: string;
+}
+
+export interface PublicUserProfileResponse {
+  user_id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
 }
 
 export interface POIResponse {
@@ -396,7 +408,7 @@ export interface VirtualTourResponse {
   scenes: TourSceneResponse[];
 }
 
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+export async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   const res = await fetch(url, {
     headers: {
@@ -556,6 +568,12 @@ export async function getPublishedListingDetails(id: string): Promise<Listing> {
     `${API_BASE}/api/v1/listings/${id}`,
   );
   return mapApiListing(listing);
+}
+
+export async function getPublicUserProfile(userId: string): Promise<PublicUserProfileResponse> {
+  return fetchJson<PublicUserProfileResponse>(
+    `${AUTH_API_BASE}/users/${userId}/profile`,
+  );
 }
 
 export async function recordListingView(listingId: string): Promise<void> {

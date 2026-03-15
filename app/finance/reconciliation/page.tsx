@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { TopBar } from "@/components/shared/TopBar";
 import { DataSourcePanel } from "@/components/finance/DataSourcePanel";
 import { CrossCheckPanel } from "@/components/finance/CrossCheckPanel";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/hooks/use-toast";
@@ -79,11 +79,20 @@ export default function ReconciliationPage() {
 
   return (
     <main className="flex flex-col h-full">
-      <TopBar title="Financial Reconciliation" />
-
       <div className="flex-1 overflow-y-auto">
+        <section className="p-6 pb-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Financial Reconciliation</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 text-sm text-muted-foreground">
+              Compare system credits, gateway receipts, and operating expenses for a selected period.
+            </CardContent>
+          </Card>
+        </section>
+
         {/* Period selector */}
-        <div className="flex items-center gap-3 px-6 pt-5 pb-2 border-b border-border bg-card/50">
+        <div className="flex items-center gap-3 px-6 pb-2 border-b border-border bg-card/50">
           <span className="text-sm font-medium text-muted-foreground">Period:</span>
           <Select value={month} onValueChange={setMonth}>
             <SelectTrigger className="w-36"><SelectValue placeholder="Month" /></SelectTrigger>
@@ -102,6 +111,29 @@ export default function ReconciliationPage() {
             Refresh
           </Button>
         </div>
+
+        {data ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 pb-0">
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Period</p>
+                <p className="text-base font-semibold">{data.monthLabel}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Status</p>
+                <p className="text-base font-semibold">{data.status}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Discrepancy</p>
+                <p className="text-base font-semibold">{data.discrepancyPercent.toFixed(2)}%</p>
+              </CardContent>
+            </Card>
+          </div>
+        ) : null}
 
         {/* States */}
         {loading && !data && <DashboardSkeleton />}

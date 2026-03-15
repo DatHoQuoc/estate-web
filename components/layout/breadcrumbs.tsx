@@ -1,11 +1,55 @@
 import { ChevronRight, Home } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { getPublishedListingDetails } from "@/lib/api-client";
 
 export function Breadcrumbs() {
   const location = useLocation();
   const pathnames = location.pathname.split("/").filter((x) => x);
+  const [listingTitle, setListingTitle] = useState<string>("");
+
+  const isDiscoverListingDetail =
+    pathnames[0] === "discover" && pathnames[1] === "listings" && Boolean(pathnames[2]);
+  const listingId = isDiscoverListingDetail ? pathnames[2] : "";
+
+  useEffect(() => {
+    if (!isDiscoverListingDetail || !listingId) {
+      setListingTitle("");
+      return;
+    }
+
+    let mounted = true;
+    getPublishedListingDetails(listingId)
+      .then((listing) => {
+        if (!mounted) return;
+        setListingTitle(listing.title || "");
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setListingTitle("");
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [isDiscoverListingDetail, listingId]);
+
+  const formattedSegments = useMemo(
+    () =>
+      pathnames.map((value, index) => {
+        const isLast = index === pathnames.length - 1;
+        if (isDiscoverListingDetail && isLast) {
+          return listingTitle || "Listing Detail";
+        }
+
+        return value
+          .split("-")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+      }),
+    [isDiscoverListingDetail, listingTitle, pathnames],
+  );
 
   if (pathnames.length === 0) {
     return null; // Don't show breadcrumbs on home page
@@ -29,12 +73,7 @@ export function Breadcrumbs() {
       {pathnames.map((value, index) => {
         const last = index === pathnames.length - 1;
         const to = `/${pathnames.slice(0, index + 1).join("/")}`;
-
-        // Format string (e.g., capitalize, replace dashes)
-        const formattedValue = value
-          .split("-")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ");
+        const formattedValue = formattedSegments[index] || value;
 
         return (
           <React.Fragment key={to}>

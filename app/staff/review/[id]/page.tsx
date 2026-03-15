@@ -38,6 +38,8 @@ import { useSearchParams } from "react-router-dom";
 import { VirtualTourEditor } from "@/components/virtual-tour/VirtualTourEditor";
 import { useVirtualTour } from "@/components/virtual-tour/hooks/useVirtualTour";
 import FullPageLoading from "@/components/common/fullpage-loading";
+import { authClient } from "../../../../src/lib/auth-client";
+import type { PublicUserProfileDto } from "../../../../src/lib/auth-types";
 
 const defaultChecklist: ChecklistItem[] = [
   { id: "listing_title", label: "Title is clear and policy-compliant", checked: false, required: true },
@@ -83,6 +85,7 @@ export default function StaffReviewDetailPage() {
   const [feedbackToSeller, setfeedbackToSeller] = useState("");
   const [checks, setChecks] = useState<AICheck[]>([]);
   const [reviewHistory, setReviewHistory] = useState<ListingReviewResponse[]>([]);
+  const [sellerProfile, setSellerProfile] = useState<PublicUserProfileDto | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [saving, setSaving] = useState(false);
@@ -104,6 +107,21 @@ export default function StaffReviewDetailPage() {
           //getListingVideos(listingId),
         ]);
 
+
+        const sellerId = listingData.sellerId || listingData.seller.id;
+        let publicProfile: PublicUserProfileDto | null = null;
+        try {
+          if (sellerId) {
+            publicProfile = await authClient.getPublicProfile(sellerId);
+          }
+        } catch (profileError) {
+          console.warn(`Failed to load public seller profile for user ${sellerId}`, profileError);
+        }
+
+        const sellerName = publicProfile?.display_name
+          || `${publicProfile?.first_name || ""} ${publicProfile?.last_name || ""}`.trim()
+          || listingData.seller.name
+          || "Unknown Seller";
 
         const mappedAmenities = listingData.amenities.map((a) => ({
           amenityId: a.amenityId,
@@ -131,10 +149,18 @@ export default function StaffReviewDetailPage() {
 
         setListing({
           ...listingData,
+          seller: {
+            ...listingData.seller,
+            id: publicProfile?.user_id || listingData.seller.id,
+            name: sellerName,
+            email: publicProfile?.email || listingData.seller.email,
+            avatar: publicProfile?.avatar_url || listingData.seller.avatar,
+          },
           images: mappedImages,
           amenities: mappedAmenities,
           //videos: mappedVideos,
         });
+        setSellerProfile(publicProfile);
 
         const aiChecks = mapFeedbackToAIChecks(feedbacks);
         setChecks(aiChecks);
@@ -309,10 +335,13 @@ export default function StaffReviewDetailPage() {
               <div className="sticky top-20 space-y-6">
                 <SellerContactInfo
                   seller={{
-                    id: listing.seller.id,
-                    name: listing.seller.name || "John",
-                    email: listing.seller.email || "No email",
-                    phone: "0909106528",
+                    id: sellerProfile?.user_id || listing.seller.id,
+                    name:
+                      sellerProfile?.display_name
+                      || `${sellerProfile?.first_name || ""} ${sellerProfile?.last_name || ""}`.trim()
+                      || listing.seller.name
+                      || "Unknown Seller",
+                    email: sellerProfile?.email || listing.seller.email || "No email",
                     joinedDate: undefined,
                     totalListings: undefined,
                   }}

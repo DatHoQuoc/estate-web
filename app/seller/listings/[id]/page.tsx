@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Edit, Globe } from "lucide-react"
 import { ImageGallery } from "@/components/common/image-gallery"
@@ -12,8 +12,9 @@ import {
 } from "@/components/seller/property-details"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { getListingDetails, getVirtualTour } from "@/lib/api-client"
-import type { Listing } from "@/lib/types"
+import { getListingDetails, getPublicUserProfile, getVirtualTour } from "@/lib/api-client"
+import type { Listing, User } from "@/lib/types"
+import type { PublicUserProfileResponse } from "@/lib/api-client"
 import { cn } from "@/lib/utils"
 
 export default function ListingDetailPage() {
@@ -21,31 +22,77 @@ export default function ListingDetailPage() {
   const navigate = useNavigate()
   const listingId = params.id as string
   const [listing, setListing] = useState<Listing | null>(null)
+  const [sellerProfile, setSellerProfile] = useState<PublicUserProfileResponse | null>(null)
   const [tourSceneCount, setTourSceneCount] = useState(0)
   const [tourPublished, setTourPublished] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const resolvedSeller = useMemo<User>(() => {
+    if (!listing) {
+      return {
+        id: "",
+        email: "",
+        name: "Seller",
+        role: "seller",
+      }
+    }
+
+    const fullName = `${sellerProfile?.first_name || ""} ${sellerProfile?.last_name || ""}`.trim()
+    const profileName = sellerProfile?.display_name || fullName || sellerProfile?.email || undefined
+
+    return {
+      ...listing.seller,
+      id: sellerProfile?.user_id || listing.seller?.id || "",
+      email: sellerProfile?.email || listing.seller?.email || "",
+      name: profileName || listing.seller?.name || "Seller",
+      avatar: sellerProfile?.avatar_url || listing.seller?.avatar,
+      role: listing.seller?.role || "seller",
+    }
+  }, [listing, sellerProfile])
+
   useEffect(() => {
     let isMounted = true
     setLoading(true)
-    
-    Promise.all([
-      getListingDetails(listingId),
-      getListingDetails(listingId).then((data) => {
-        if (data.mediaType === "photos_and_tour") {
-          return getVirtualTour(listingId)
-        }
-        return null
-      })
-    ])
-      .then(([listingData, tourData]) => {
+
+    getListingDetails(listingId)
+      .then(async (listingData) => {
         if (!isMounted) return
+
         setListing(listingData)
+
+        const sellerId = listingData.seller?.id || (listingData as any).sellerId
+        if (sellerId) {
+          getPublicUserProfile(sellerId)
+            .then((profile) => {
+              if (!isMounted) return
+              setSellerProfile(profile)
+            })
+            .catch(() => {
+              if (!isMounted) return
+              setSellerProfile(null)
+            })
+        } else {
+          setSellerProfile(null)
+        }
+
+        let tourData = null
+        if (listingData.mediaType === "photos_and_tour") {
+          try {
+            tourData = await getVirtualTour(listingId)
+          } catch {
+            tourData = null
+          }
+        }
+
         if (tourData) {
           setTourSceneCount(tourData.scenes.length)
           setTourPublished(tourData.isPublished)
+        } else {
+          setTourSceneCount(0)
+          setTourPublished(false)
         }
+
         setError(null)
       })
       .catch((err) => {
@@ -203,7 +250,7 @@ export default function ListingDetailPage() {
 
             <div className="lg:col-span-1">
               <ContactCard
-                seller={listing.seller}
+                seller={resolvedSeller}
                 onCall={() => console.log("Call")}
                 onMessage={() => console.log("Message")}
               />

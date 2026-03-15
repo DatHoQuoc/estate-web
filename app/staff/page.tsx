@@ -14,6 +14,7 @@ import {
 } from "@/lib/api-client";
 import type { Listing, MergedListing } from "@/lib/types";
 import { useAuth } from "@/components/auth/AuthContext";
+import { authClient } from "../../src/lib/auth-client";
 
 const priorityFilterOptions = [
   { value: "all", label: "All Priority" },
@@ -50,8 +51,31 @@ function StaffDashboardContent() {
     let isMounted = true;
     setLoading(true);
     getPendingReviewListings()
-      .then((data) => {
+      .then(async (data) => {
         if (!isMounted) return;
+
+        const sellerProfiles = new Map<string, { username: string; role: string }>();
+
+        const sellerIds = Array.from(
+          new Set(
+            data
+              .map((listing) => listing.sellerId || listing.seller.id)
+              .filter(Boolean)
+          )
+        ) as string[];
+
+        await Promise.all(
+          sellerIds.map(async (sellerId) => {
+            try {
+              const profile = await authClient.getPublicProfile(sellerId);
+              const composedName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
+              const username = profile.display_name || composedName || profile.email;
+              sellerProfiles.set(sellerId, { username, role: "seller" });
+            } catch (profileError) {
+              console.warn(`Failed to fetch public profile for seller ${sellerId}`, profileError);
+            }
+          })
+        );
 
         const mergedListings: MergedListing[] = data.map((apiListing) => {
           const submittedDate = apiListing.submittedAt
@@ -60,6 +84,7 @@ function StaffDashboardContent() {
           const waitTimeHours = Math.floor(
             (new Date().getTime() - submittedDate.getTime()) / (1000 * 60 * 60)
           );
+          const sellerProfile = sellerProfiles.get(apiListing.sellerId || apiListing.seller.id);
 
           return {
             id: apiListing.id,
@@ -67,6 +92,8 @@ function StaffDashboardContent() {
             seller: {
               name: apiListing.seller.name || "Unknown Seller",
               type: apiListing.seller.type || "individual",
+              username: sellerProfile?.username || apiListing.seller.name || "Unknown Seller",
+              role: sellerProfile?.role || apiListing.seller.role || "seller",
             },
             priority: "medium", // Default priority as it's not in the API yet
             waitTime: waitTimeHours,

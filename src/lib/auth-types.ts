@@ -8,18 +8,19 @@ export const AUTH_ENDPOINTS = {
   UPDATE_PROFILE: "/users/profile",
   USERS: "/users",
   USERS_STATS: "/users/stats",
+  USER_PUBLIC_PROFILE: "/users/:id/profile",
   ROLES: "/roles",
 } as const;
 
 export interface LoginDto {
   email: string;
-  password?: string;
+  password: string;
 }
 
 export interface RegisterDto {
   email: string;
-  password?: string;
-  password_confirmation?: string;
+  password: string;
+  password_confirmation: string;
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
@@ -43,7 +44,13 @@ export interface VerifyEmailDto {
 export interface AuthResponse {
   access_token: string;
   refresh_token: string;
-  user?: UserResponseDto;
+  expires_in?: string | number;
+  user: UserResponseDto;
+}
+
+export interface RegisterResponseDto {
+  message: string;
+  user: UserResponseDto;
 }
 
 export interface RoleResponseDto {
@@ -65,6 +72,15 @@ export interface UserResponseDto {
   created_at: string;
   updated_at: string;
   last_login_at: string | null;
+}
+
+export interface PublicUserProfileDto {
+  user_id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
 }
 
 export interface UserStatsResponseDto {

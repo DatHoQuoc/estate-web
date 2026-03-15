@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { TopBar } from "@/components/shared/TopBar";
 import { AuditTable } from "@/components/finances/AuditTable";
 import { ManualAdjustmentModal } from "@/components/finances/ManualAdjustmentModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/hooks/use-toast";
 import { Loader2, RefreshCw } from "lucide-react";
 import { TransactionRecord } from "@/lib/finance-type";
@@ -54,9 +54,16 @@ export default function AuditPage() {
 
   return (
     <main className="flex-1 flex flex-col overflow-hidden">
-      <TopBar title="Transaction Audit" />
-
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Transaction Audit</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 text-sm text-muted-foreground">
+            Inspect mismatches, investigate partial matches, and apply manual adjustments when needed.
+          </CardContent>
+        </Card>
+
         {/* Period selector */}
         <div className="flex items-center gap-3 flex-wrap border-b border-border pb-4">
           <span className="text-sm font-medium text-muted-foreground">Period:</span>
@@ -103,6 +110,27 @@ export default function AuditPage() {
               <SelectItem value="adjusted">Adjusted</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Total Entries</p>
+              <p className="text-2xl font-semibold">{counts.total}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Unmatched</p>
+              <p className="text-2xl font-semibold text-destructive">{counts.unmatched}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Partial</p>
+              <p className="text-2xl font-semibold text-warning">{counts.partial}</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Table / states */}

@@ -3,44 +3,39 @@ import {
   ReconcileRequest, ManualAdjustmentRequest, AuditNoteRequest,
   ResolveDiscrepancyRequest, ExpenseCreateRequest,
 } from "./finance-type";
+import { fetchJson } from "./api-client";
 
-const BASE = "/api/reconciliation";
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...options });
-  if (!res.ok) { const text = await res.text().catch(() => res.statusText); throw new Error(text || `HTTP ${res.status}`); }
-  return res.json() as Promise<T>;
-}
+const BASE = import.meta.env.VITE_TRANSACTION_API_BASE_URL + "/reconciliation";
 
 export const getReconciliationSummary = (month: number, year: number) =>
-  apiFetch<ReconciliationSummary>(`${BASE}/${month}/${year}`);
+  fetchJson<ReconciliationSummary>(`${BASE}/${month}/${year}`);
 
-export const runReconciliation = (month: number, year: number, payload: ReconcileRequest, adminId: string) =>
-  apiFetch(`${BASE}/${month}/${year}/reconcile`, { method: "POST", body: JSON.stringify(payload), headers: { "Content-Type": "application/json", "X-User-Id": adminId } });
+export const runReconciliation = (month: number, year: number, payload: ReconcileRequest) =>
+  fetchJson(`${BASE}/${month}/${year}/reconcile`, { method: "POST", body: JSON.stringify(payload) });
 
 export const getAudit = (month: number, year: number) =>
-  apiFetch<{ totalCount: number; matchedCount: number; unmatchedCount: number; partialCount: number; entries: TransactionRecord[] }>(`${BASE}/${month}/${year}/audit`);
+  fetchJson<{ totalCount: number; matchedCount: number; unmatchedCount: number; partialCount: number; entries: TransactionRecord[] }>(`${BASE}/${month}/${year}/audit`);
 
-export const applyManualAdjustment = (payload: ManualAdjustmentRequest, adminId: string) =>
-  apiFetch(`${BASE}/adjust`, { method: "POST", body: JSON.stringify(payload), headers: { "Content-Type": "application/json", "X-User-Id": adminId } });
+export const applyManualAdjustment = (payload: ManualAdjustmentRequest) =>
+  fetchJson(`${BASE}/adjust`, { method: "POST", body: JSON.stringify(payload) });
 
-export const updateAuditNote = (auditEntryId: number, payload: AuditNoteRequest, adminId: string) =>
-  apiFetch(`${BASE}/audit/${auditEntryId}/note`, { method: "PATCH", body: JSON.stringify(payload), headers: { "Content-Type": "application/json", "X-User-Id": adminId } });
+export const updateAuditNote = (auditEntryId: number, payload: AuditNoteRequest) =>
+  fetchJson(`${BASE}/audit/${auditEntryId}/note`, { method: "PATCH", body: JSON.stringify(payload) });
 
-export const resolveDiscrepancy = (reconciliationId: number, payload: ResolveDiscrepancyRequest, adminId: string) =>
-  apiFetch(`${BASE}/${reconciliationId}/resolve`, { method: "POST", body: JSON.stringify(payload), headers: { "Content-Type": "application/json", "X-User-Id": adminId } });
+export const resolveDiscrepancy = (reconciliationId: number, payload: ResolveDiscrepancyRequest) =>
+  fetchJson(`${BASE}/${reconciliationId}/resolve`, { method: "POST", body: JSON.stringify(payload) });
 
 export const getMonthlyReport = (reconciliationId: number) =>
-  apiFetch<MonthlyReport>(`${BASE}/${reconciliationId}/report`);
+  fetchJson<MonthlyReport>(`${BASE}/${reconciliationId}/report`);
 
 export const exportReport = (reconciliationId: number) =>
-  apiFetch<string>(`${BASE}/${reconciliationId}/export`, { method: "POST" });
+  fetchJson<string>(`${BASE}/${reconciliationId}/export`, { method: "POST" });
 
-export const emailReport = (reconciliationId: number, adminId: string) =>
-  apiFetch(`${BASE}/${reconciliationId}/email`, { method: "POST", headers: { "X-User-Id": adminId } });
+export const emailReport = (reconciliationId: number) =>
+  fetchJson(`${BASE}/${reconciliationId}/email`, { method: "POST" });
 
 export const getReconciliationHistory = () =>
-  apiFetch<{ id: number; month: number; year: number; status: string; netProfit: number }[]>(`${BASE}/history`);
+  fetchJson<{ id: number; month: number; year: number; status: string; netProfit: number }[]>(`${BASE}/history`);
 
-export const addExpense = (payload: ExpenseCreateRequest, adminId: string) =>
-  apiFetch(`${BASE}/expenses`, { method: "POST", body: JSON.stringify(payload), headers: { "Content-Type": "application/json", "X-User-Id": adminId } });
+export const addExpense = (payload: ExpenseCreateRequest) =>
+  fetchJson(`${BASE}/expenses`, { method: "POST", body: JSON.stringify(payload) });
