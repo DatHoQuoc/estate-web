@@ -8,6 +8,9 @@ import {
     AuthResponse, 
     UpdateUserDto, 
     UserResponseDto, 
+    UserStatsResponseDto,
+    UserListQueryDto,
+    PaginatedUsersResponseDto,
     AdminCreateUserDto, 
     AdminUpdateUserDto, 
     RoleResponseDto 
@@ -47,6 +50,48 @@ authApiClient.interceptors.response.use(
     }
 );
 
+function normalizePaginatedUsersResponse(raw: any): PaginatedUsersResponseDto {
+    if (Array.isArray(raw)) {
+        const items = raw as UserResponseDto[];
+        return {
+            items,
+            meta: {
+                page: 1,
+                limit: items.length || 20,
+                total: items.length,
+                totalPages: 1,
+            },
+        };
+    }
+
+    const items: UserResponseDto[] =
+        raw?.items ||
+        raw?.data ||
+        raw?.results ||
+        [];
+
+    const meta = raw?.meta || raw?.pagination || {};
+    const page = Number(raw?.page ?? meta?.page ?? meta?.currentPage ?? 1);
+    const limit = Number((raw?.limit ?? meta?.limit ?? meta?.perPage ?? items.length) || 20);
+    const total = Number(raw?.total ?? meta?.total ?? meta?.totalItems ?? items.length);
+    const totalPages = Number(
+        raw?.totalPages ??
+        meta?.totalPages ??
+        meta?.pageCount ??
+        (limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1),
+    );
+
+    return {
+        items,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+        },
+    };
+}
+
 export const authClient = {
     login: async (data: LoginDto): Promise<AuthResponse> => {
         const res = await authApiClient.post(AUTH_ENDPOINTS.LOGIN, data);
@@ -84,8 +129,25 @@ export const authClient = {
     },
 
     // Admin User Management
-    listUsers: async (): Promise<UserResponseDto[]> => {
-        const res = await authApiClient.get(AUTH_ENDPOINTS.USERS);
+    listUsers: async (params: UserListQueryDto = {}): Promise<PaginatedUsersResponseDto> => {
+        const res = await authApiClient.get(AUTH_ENDPOINTS.USERS, { params });
+        return normalizePaginatedUsersResponse(res.data);
+    },
+
+    listAllUsers: async (limit = 100): Promise<UserResponseDto[]> => {
+        const firstPage = await authClient.listUsers({ page: 1, limit });
+        const users = [...firstPage.items];
+
+        for (let page = 2; page <= firstPage.meta.totalPages; page += 1) {
+            const nextPage = await authClient.listUsers({ page, limit });
+            users.push(...nextPage.items);
+        }
+
+        return users;
+    },
+
+    getUserStats: async (): Promise<UserStatsResponseDto> => {
+        const res = await authApiClient.get(AUTH_ENDPOINTS.USERS_STATS);
         return res.data;
     },
 

@@ -36,17 +36,26 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MoreHorizontal, Edit, Trash2, Shield, UserX, CheckCircle2, Loader2, Search } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Shield, CheckCircle2, XCircle, Loader2, Search, Clock } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { Pagination } from "@/components/common/pagination";
 
-export function UserManagementTable() {
+interface UserManagementTableProps {
+  onUsersChanged?: () => void;
+}
+
+export function UserManagementTable({ onUsersChanged }: UserManagementTableProps) {
   const [users, setUsers] = useState<UserResponseDto[]>([]);
   const [roles, setRoles] = useState<RoleResponseDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [editingUser, setEditingUser] = useState<UserResponseDto | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const pageSize = 20;
 
   const [editFormData, setEditFormData] = useState<AdminUpdateUserDto & { id: string }>({
     id: "",
@@ -57,11 +66,17 @@ export function UserManagementTable() {
     role_id: ""
   });
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (notifyChange = true, page = currentPage) => {
     try {
       setIsLoading(true);
-      const data = await authClient.listUsers();
-      setUsers(data);
+      const response = await authClient.listUsers({ page, limit: pageSize });
+      setUsers(response.items);
+      setCurrentPage(response.meta.page);
+      setTotalPages(response.meta.totalPages);
+      setTotalUsers(response.meta.total);
+      if (notifyChange) {
+        onUsersChanged?.();
+      }
     } catch (error) {
       toast.error("Failed to fetch users");
       console.error(error);
@@ -80,9 +95,14 @@ export function UserManagementTable() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(false, currentPage);
     fetchRoles();
   }, []);
+
+  useEffect(() => {
+    if (currentPage === 1) return;
+    fetchUsers(false, currentPage);
+  }, [currentPage]);
 
   const handleEditClick = (user: UserResponseDto) => {
     setEditingUser(user);
@@ -159,7 +179,7 @@ export function UserManagementTable() {
           />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchUsers} disabled={isLoading}>
+          <Button variant="outline" size="sm" onClick={() => fetchUsers(true, currentPage)} disabled={isLoading}>
             Refresh
           </Button>
           <Button size="sm">
@@ -172,9 +192,11 @@ export function UserManagementTable() {
         <Table>
           <TableHeader className="bg-muted/30">
             <TableRow>
-              <TableHead className="w-[300px]">User</TableHead>
+              <TableHead className="w-75">User</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Last Login</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -182,14 +204,14 @@ export function UserManagementTable() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-48 text-center">
+                <TableCell colSpan={7} className="h-48 text-center">
                   <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
                   <p className="mt-2 text-sm text-muted-foreground">Loading users...</p>
                 </TableCell>
               </TableRow>
             ) : filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-48 text-center">
+                <TableCell colSpan={7} className="h-48 text-center">
                   <p className="text-muted-foreground text-sm">No users found.</p>
                 </TableCell>
               </TableRow>
@@ -218,6 +240,27 @@ export function UserManagementTable() {
                       <Shield className="h-3 w-3 text-zinc-400" />
                       <span className="text-xs font-medium text-zinc-600 capitalize">{user.role?.name || "No Role"}</span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {user.email_verified ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase border border-emerald-200">
+                        <CheckCircle2 className="h-3 w-3" />Verified
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase border border-amber-200">
+                        <XCircle className="h-3 w-3" />Unverified
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground font-medium">
+                    {user.last_login_at ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {new Date(user.last_login_at).toLocaleDateString()}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-400 italic">Never</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground font-medium">
                     {new Date(user.created_at).toLocaleDateString()}
@@ -251,6 +294,17 @@ export function UserManagementTable() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-background/90 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground">
+          Showing page {currentPage} of {totalPages} · Total users: {totalUsers}
+        </p>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
       </div>
 
       {/* Edit User Dialog */}

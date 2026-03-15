@@ -11,7 +11,7 @@ export function Breadcrumbs() {
     return null; // Don't show breadcrumbs on home page
   }
 
-  if (pathnames[0] === "seller") {
+  if (["seller", "admin"].includes(pathnames[0])) {
     return null;
   }
   // auth

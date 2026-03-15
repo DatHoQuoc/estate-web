@@ -31,6 +31,9 @@ import LoginPage from "@app/auth/login/page";
 import RegisterPage from "@app/auth/register/page";
 import ProfileSettingsPage from "@app/profile/settings/page";
 import CreditPage from "@app/credit/page";
+import AdminAiUsagePage from "@app/admin/ai-usage/page";
+import AdminAnalyticsPage from "@app/admin/analytics/page";
+import AdminListingsPage from "@app/admin/listings/page";
 import AdminUsersPage from "@app/admin/users/page";
 import { Toaster } from "react-hot-toast";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -65,7 +68,11 @@ function App() {
               <Route path="/seller/listings/:id/edit" element={<ProtectedRoute><EditListingPage /></ProtectedRoute>} />
               <Route path="/seller/listings/:id/tour/edit" element={<ProtectedRoute><TourEditorPage /></ProtectedRoute>} />
               <Route path="/profile/settings" element={<ProtectedRoute><ProfileSettingsPage /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><Navigate to="/admin/users" replace /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsersPage /></ProtectedRoute>} />
+              <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={["admin"]}><AdminAnalyticsPage /></ProtectedRoute>} />
+              <Route path="/admin/listings" element={<ProtectedRoute allowedRoles={["admin"]}><AdminListingsPage /></ProtectedRoute>} />
+              <Route path="/admin/ai-usage" element={<ProtectedRoute allowedRoles={["admin"]}><AdminAiUsagePage /></ProtectedRoute>} />
               <Route path="/staff" element={<ProtectedRoute><StaffDashboardPage /></ProtectedRoute>} />
               <Route path="/staff/review" element={<ProtectedRoute><StaffReviewQueuePage /></ProtectedRoute>} />
               <Route path="/staff/review/:id" element={<ProtectedRoute><StaffReviewDetailPage /></ProtectedRoute>} />

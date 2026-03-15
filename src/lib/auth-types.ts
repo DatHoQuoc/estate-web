@@ -7,6 +7,7 @@ export const AUTH_ENDPOINTS = {
   LOGOUT: "/auth/logout",
   UPDATE_PROFILE: "/users/profile",
   USERS: "/users",
+  USERS_STATS: "/users/stats",
   ROLES: "/roles",
 } as const;
 
@@ -64,6 +65,30 @@ export interface UserResponseDto {
   created_at: string;
   updated_at: string;
   last_login_at: string | null;
+}
+
+export interface UserStatsResponseDto {
+  total: number;
+  active: number;
+  inactive: number;
+  suspended: number;
+}
+
+export interface UserListQueryDto {
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedMetaDto {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedUsersResponseDto {
+  items: UserResponseDto[];
+  meta: PaginatedMetaDto;
 }
 
 export interface UpdateUserDto {

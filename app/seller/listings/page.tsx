@@ -7,6 +7,7 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Copy,
   Plus,
   Eye,
   Edit,
@@ -35,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  createListingDraft,
   deleteListingDraft,
   listSellerListings,
   submitListingForReview,
@@ -162,6 +164,38 @@ function SellerListingsContent() {
       await loadListings();
     } catch (err) {
       console.error(err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCloneArchived = async (listing: Listing) => {
+    setActionLoading(listing.id);
+    try {
+      const clone = await createListingDraft({
+        title: `${listing.title} (Copy)`,
+        description: listing.description,
+        listingType: listing.transactionType,
+        propertyType: listing.propertyType,
+        price: listing.price,
+        priceCurrency: "VND",
+        areaSqm: listing.area,
+        bedrooms: listing.bedrooms,
+        bathrooms: listing.bathrooms,
+        floorNumber: listing.floor ?? undefined,
+        yearBuilt: listing.yearBuilt ?? undefined,
+        wardId: listing.location.wardId || undefined,
+        provinceId: listing.location.provinceId || undefined,
+        countryId: listing.location.countryId || undefined,
+        streetAddress: listing.location.address,
+        latitude: listing.location.lat,
+        longitude: listing.location.lng,
+      });
+
+      navigate(`/seller/listings/${clone.id}/edit`);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to clone listing");
     } finally {
       setActionLoading(null);
     }
@@ -460,6 +494,15 @@ function SellerListingsContent() {
                                     Delete
                                   </DropdownMenuItem>
                                 </>
+                              )}
+
+                              {listing.status === "ARCHIVED" && (
+                                <DropdownMenuItem
+                                  onClick={() => handleCloneArchived(listing)}
+                                >
+                                  <Copy className="mr-2 h-4 w-4" />
+                                  Clone as Draft
+                                </DropdownMenuItem>
                               )}
 
                             </DropdownMenuContent>

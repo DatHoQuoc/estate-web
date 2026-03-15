@@ -1015,13 +1015,13 @@ export async function uploadListingVideos(
 }
 
 export async function publishListing(listingId: string): Promise<void> {
-  await fetchJson<void>(`${API_BASE}/api/v1/listings/${listingId}/publish`, {
+  await fetchJson<void>(`${API_BASE}/api/v1/seller/listings/${listingId}/publish`, {
     method: "PUT",
   });
 }
 
 export async function unpublishListing(listingId: string): Promise<void> {
-  await fetchJson<void>(`${API_BASE}/api/v1/listings/${listingId}/unpublish`, {
+  await fetchJson<void>(`${API_BASE}/api/v1/seller/listings/${listingId}/unpublish`, {
     method: "PUT",
   });
 }
