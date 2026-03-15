@@ -1,4 +1,3 @@
-import { mockStaffUser } from "@/lib/mock-data";
 import { LandPlot, MapPinHouse } from "lucide-react";
 
 export default function FullPageLoading() {

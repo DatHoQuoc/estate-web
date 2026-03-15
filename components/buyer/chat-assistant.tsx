@@ -32,7 +32,7 @@ import {
   type AmenityResponse,
   type ChatSessionListItemDto,
 } from "@/lib/api-client";
-import type { Country, Listing, Province } from "@/lib/types";
+import type { Country, Province } from "@/lib/types";
 
 interface Message {
   id: string;
@@ -40,6 +40,11 @@ interface Message {
   text: string;
   createdAt: number;
   listings?: ChatListingPublishedMessage[];
+}
+
+interface FunctionSearchResultItem {
+  document?: string;
+  metadata?: Record<string, unknown>;
 }
 
 interface SessionListItem {
@@ -50,6 +55,9 @@ interface SessionListItem {
 interface ChatAssistantProps {
   onViewListing: (id: string) => void;
   defaultQuery?: string;
+  autoSendDefaultQuery?: boolean;
+  startNewSessionOnAutoSend?: boolean;
+  onAutoSentDefaultQuery?: () => void;
   listingId?: string | null;
   initialSessionId?: string | null;
   onSessionChange?: (sessionId: string | null) => void;
@@ -74,14 +82,148 @@ function mapHistoryPartsToText(parts: ChatHistoryContentPartDto[]): string {
     .map((part) => {
       if (part.text) return part.text;
       if (part.functionCall) return `Looking for listings with your criteria...`;
-      if (part.functionResponse)
-        return (part.functionResponse.response as { result: Listing[] })?.result.length > 0
-          ? `Found ${(part.functionResponse.response as { result: Listing[] }).result.length} matching listings.`
+      if (part.functionResponse) {
+        const listings = parseListingsFromFunctionResponse(part.functionResponse);
+        return listings.length > 0
+          ? `Found ${listings.length} matching listings.`
           : `Couldn't find any listings matching your criteria.`;
+      }
       return "";
     })
     .filter(Boolean)
     .join("\n");
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toNullableNumber(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toStringValue(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function safeParseImageUrls(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw.filter((value): value is string => typeof value === "string");
+  }
+
+  if (typeof raw !== "string") return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((value): value is string => typeof value === "string");
+    }
+    return [];
+  } catch {
+    const urlMatches = raw.match(/https?:\/\/[^\s"'\\]+/g);
+    return urlMatches || [];
+  }
+}
+
+function extractFieldFromDocument(document: string | undefined, field: string): string {
+  if (!document) return "";
+  const regex = new RegExp(`${field}\\s*:\\s*([^\\n]+)`, "i");
+  const match = document.match(regex);
+  return match?.[1]?.trim() || "";
+}
+
+function parseResultItemToListing(item: FunctionSearchResultItem): ChatListingPublishedMessage | null {
+  const metadata = item.metadata || {};
+  const document = item.document || "";
+
+  const listingId = toStringValue(metadata.listingId) || extractFieldFromDocument(document, "Listing ID");
+  const title =
+    toStringValue(metadata.propertyName) ||
+    toStringValue(metadata.title) ||
+    extractFieldFromDocument(document, "Title");
+
+  if (!listingId || !title) return null;
+
+  const description = toStringValue(metadata.description) || extractFieldFromDocument(document, "Description");
+  const address = toStringValue(metadata.address) || extractFieldFromDocument(document, "Address");
+  const price = toNumber(metadata.price, toNumber(extractFieldFromDocument(document, "Price").replace(/[^\d.]/g, ""), 0));
+
+  const images = safeParseImageUrls(metadata.images);
+  const featureImage = images[0] || "";
+
+  return {
+    listingId,
+    userId: toStringValue(metadata.userId, ""),
+    title,
+    description,
+    listingType: toStringValue(metadata.listingType, "SALE"),
+    propertyType: toStringValue(metadata.propertyType, "APARTMENT"),
+    status: toNumber(metadata.status, 0),
+    price,
+    priceCurrency: toStringValue(metadata.currency, "VND"),
+    pricePeriod: null,
+    negotiable: Boolean(metadata.negotiable),
+    areaSqm: toNumber(metadata.areaSqm, 0),
+    bedrooms: toNumber(metadata.bedrooms, 0),
+    bathrooms: toNumber(metadata.bathrooms, 0),
+    floors: toNullableNumber(metadata.floors),
+    floorNumber: toNumber(metadata.floorNumber, 0),
+    yearBuilt: toNumber(metadata.yearBuilt, 0),
+    streetAddress: address,
+    buildingName: null,
+    wardName: toStringValue(metadata.wardName, ""),
+    provinceName: toStringValue(metadata.provinceName, ""),
+    countryName: toStringValue(metadata.countryName, "Vietnam"),
+    latitude: toNullableNumber(metadata.latitude),
+    longitude: toNullableNumber(metadata.longitude),
+    featuredImageUrl: featureImage,
+    imagesJson: images.map((url) => ({ url })),
+    additionalInfoJson: null,
+    viewCount: toNumber(metadata.viewCount, 0),
+    saveCount: toNumber(metadata.saveCount, 0),
+    contactCount: toNumber(metadata.contactCount, 0),
+    creditsLocked: 0,
+    creditsCharged: 0,
+    creditsRefunded: 0,
+    amenityNames: Array.isArray(metadata.amenities)
+      ? (metadata.amenities as unknown[]).filter((v): v is string => typeof v === "string")
+      : extractFieldFromDocument(document, "Amenities")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    hasVirtualTour: Boolean(metadata.hasVirtualTour),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    submittedAt: Date.now(),
+    publishedAt: Date.now(),
+    expiredAt: null,
+    freePost: false,
+  };
+}
+
+function parseListingsFromFunctionResponse(functionResponse: Record<string, unknown>): ChatListingPublishedMessage[] {
+  const response = functionResponse.response;
+  if (!response || typeof response !== "object") return [];
+
+  const result = (response as { result?: unknown }).result;
+  if (!Array.isArray(result)) return [];
+
+  return result
+    .map((item) => parseResultItemToListing(item as FunctionSearchResultItem))
+    .filter((item): item is ChatListingPublishedMessage => Boolean(item));
+}
+
+function getListingCoverImage(listing: ChatListingPublishedMessage): string {
+  if (listing.featuredImageUrl) return listing.featuredImageUrl;
+  if (!Array.isArray(listing.imagesJson)) return "";
+
+  const first = listing.imagesJson[0] as { url?: unknown; imageUrl?: unknown } | undefined;
+  if (!first) return "";
+  if (typeof first.url === "string") return first.url;
+  if (typeof first.imageUrl === "string") return first.imageUrl;
+  return "";
 }
 
 function formatListingPrice(listing: ChatListingPublishedMessage): string {
@@ -147,6 +289,9 @@ function MarkdownMessage({ text, inverted = false }: { text: string; inverted?: 
 export function ChatAssistant({
   onViewListing,
   defaultQuery = "",
+  autoSendDefaultQuery = false,
+  startNewSessionOnAutoSend = false,
+  onAutoSentDefaultQuery,
   listingId,
   initialSessionId,
   onSessionChange,
@@ -171,6 +316,7 @@ export function ChatAssistant({
   const [selectedProvinceId, setSelectedProvinceId] = useState<string>("all");
 
   const bootstrappedRef = useRef(false);
+  const autoSentQueryRef = useRef<string | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const shouldStickToBottomRef = useRef(true);
@@ -203,13 +349,26 @@ export function ChatAssistant({
     setError(null);
     try {
       const response = await getChatHistory(sessionId);
-      const mappedMessages: Message[] = response.history.map((entry, index) => ({
-        id: `${sessionId}-${index}`,
-        author: entry.role as "model" | "user" | "function",
-        text: mapHistoryPartsToText(entry.parts),
-        createdAt: Date.now() + index,
-        listings: entry.listings,
-      }));
+      const mappedMessages: Message[] = response.history.map((entry, index) => {
+        const parsedListingsFromParts = entry.parts
+          .filter((part) => Boolean(part.functionResponse))
+          .flatMap((part) => parseListingsFromFunctionResponse(part.functionResponse as Record<string, unknown>));
+
+        const uniqueListings = (entry.listings && entry.listings.length > 0
+          ? entry.listings
+          : parsedListingsFromParts
+        ).filter((listing, listingIndex, array) => {
+          return array.findIndex((candidate) => candidate.listingId === listing.listingId) === listingIndex;
+        });
+
+        return {
+          id: `${sessionId}-${index}`,
+          author: entry.role as "model" | "user" | "function",
+          text: mapHistoryPartsToText(entry.parts),
+          createdAt: Date.now() + index,
+          listings: uniqueListings,
+        };
+      });
       setMessages(mappedMessages);
     } catch (historyError) {
       const text = historyError instanceof Error ? historyError.message : "Unable to load session history.";
@@ -381,7 +540,7 @@ export function ChatAssistant({
         setMessages([]);
         setActiveSessionId(null);
         onSessionChange?.(null);
-        if (defaultQuery.trim()) {
+        if (defaultQuery.trim() && !autoSendDefaultQuery) {
           setInput(defaultQuery.trim());
         }
       } catch (bootError) {
@@ -394,7 +553,40 @@ export function ChatAssistant({
     };
 
     bootstrap();
-  }, [defaultQuery, initialSessionId, onSessionChange]);
+  }, [autoSendDefaultQuery, defaultQuery, initialSessionId, onSessionChange]);
+
+  useEffect(() => {
+    const query = defaultQuery.trim();
+    if (!autoSendDefaultQuery || !query) return;
+    if (isBootstrapping || isHistoryLoading || isCreatingSession || isSending) return;
+    if (autoSentQueryRef.current === query) return;
+
+    autoSentQueryRef.current = query;
+
+    const runAutoSend = async () => {
+      try {
+        if (startNewSessionOnAutoSend) {
+          const sessionId = await createAndActivateSession();
+          await sendMessage(query, sessionId);
+        } else {
+          await sendMessage(query);
+        }
+      } finally {
+        onAutoSentDefaultQuery?.();
+      }
+    };
+
+    runAutoSend();
+  }, [
+    autoSendDefaultQuery,
+    defaultQuery,
+    isBootstrapping,
+    isHistoryLoading,
+    isCreatingSession,
+    isSending,
+    onAutoSentDefaultQuery,
+    startNewSessionOnAutoSend,
+  ]);
 
   useEffect(() => {
     if (!selectedCountryId || selectedCountryId === "all") {
@@ -449,73 +641,72 @@ export function ChatAssistant({
   const currentLocationText = [selectedProvinceName, selectedCountryName].filter(Boolean).join(", ");
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      <aside className="flex w-55 shrink-0 flex-col border-r border-border bg-muted/30">
-        <div className="shrink-0 border-b border-border p-3">
-          <Button
-            className="w-full justify-start"
-            size="sm"
-            onClick={() => handleNewChat()}
-            disabled={isCreatingSession || isBootstrapping}
-          >
-            {isCreatingSession ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <CirclePlus className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            {isCreatingSession ? "Creating..." : "New chat"}
-          </Button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-2">
-          <div className="flex items-center gap-2 px-1 py-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            <History className="h-3.5 w-3.5" />
-            <span className="flex-1">Sessions</span>
+      <div className="flex max-h-[calc(100svh-7.5rem)] overflow-hidden w-full">
+        <aside className="flex w-55 shrink-0 flex-col border-r border-border bg-muted/30">
+          <div className="shrink-0 border-b border-border p-3">
             <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleRefreshActiveHistory}
-              disabled={!activeSessionId || isHistoryLoading || isBootstrapping}
-              aria-label="Refresh active chat history"
-              title="Refresh active chat history"
+              className="w-full justify-start"
+              size="sm"
+              onClick={() => handleNewChat()}
+              disabled={isCreatingSession || isBootstrapping}
             >
-              <RefreshCw className={`h-3 w-3 ${isHistoryLoading ? "animate-spin" : ""}`} />
+              {isCreatingSession ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <CirclePlus className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              {isCreatingSession ? "Creating..." : "New chat"}
             </Button>
           </div>
 
-          <div className="mt-1 space-y-0.5">
-            {isBootstrapping && (
-              <div className="space-y-2 px-1 py-2">
-                <Skeleton className="h-12 w-full rounded-lg" />
-                <Skeleton className="h-12 w-full rounded-lg" />
-                <Skeleton className="h-12 w-4/5 rounded-lg" />
-              </div>
-            )}
-
-            {sessions.length === 0 && <p className="px-2 py-4 text-xs text-muted-foreground">No saved sessions yet.</p>}
-
-            {sessions.map((session) => (
-              <button
-                key={session.sessionId}
-                type="button"
-                className={`w-full rounded-lg px-2.5 py-2 text-left text-xs transition ${
-                  session.sessionId === activeSessionId
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-accent hover:text-accent-foreground"
-                }`}
-                disabled={isHistoryLoading || isBootstrapping}
-                onClick={() => refreshHistory(session.sessionId)}
+          <div className="flex-1 overflow-y-auto p-2">
+            <div className="flex items-center gap-2 px-1 py-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+              <History className="h-3.5 w-3.5" />
+              <span className="flex-1">Sessions</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleRefreshActiveHistory}
+                disabled={!activeSessionId || isHistoryLoading || isBootstrapping}
+                aria-label="Refresh active chat history"
+                title="Refresh active chat history"
               >
-                <p className="font-medium leading-5">{formatSessionDateLabel(session.updatedAt)}</p>
-                <p className="mt-0.5 text-[10px] opacity-75">Updated at {formatSessionTimeLabel(session.updatedAt)}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      </aside>
+                <RefreshCw className={`h-3 w-3 ${isHistoryLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
 
-      <div className="relative flex flex-1 flex-col overflow-hidden bg-background min-w-0">
+            <div className="mt-1 space-y-0.5">
+              {isBootstrapping && (
+                <div className="space-y-2 px-1 py-2">
+                  <Skeleton className="h-12 w-full rounded-lg" />
+                  <Skeleton className="h-12 w-full rounded-lg" />
+                  <Skeleton className="h-12 w-4/5 rounded-lg" />
+                </div>
+              )}
+
+              {sessions.length === 0 && <p className="px-2 py-4 text-xs text-muted-foreground">No saved sessions yet.</p>}
+
+              {sessions.map((session) => (
+                <button
+                  key={session.sessionId}
+                  type="button"
+                  className={`w-full rounded-lg px-2.5 py-2 text-left text-xs transition ${session.sessionId === activeSessionId
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-accent hover:text-accent-foreground"
+                    }`}
+                  disabled={isHistoryLoading || isBootstrapping}
+                  onClick={() => refreshHistory(session.sessionId)}
+                >
+                  <p className="font-medium leading-5">{formatSessionDateLabel(session.updatedAt)}</p>
+                  <p className="mt-0.5 text-[10px] opacity-75">Updated at {formatSessionTimeLabel(session.updatedAt)}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <div className="relative flex flex-1 flex-col overflow-hidden bg-background min-w-0">
           <div className="shrink-0 border-b border-border px-4 py-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -540,7 +731,7 @@ export function ChatAssistant({
 
           <div
             ref={chatScrollRef}
-            className="flex-1 space-y-4 overflow-y-auto bg-linear-to-b from-background to-muted/20 p-4 pb-84"
+            className="h-full space-y-4 overflow-y-auto bg-linear-to-b from-background to-muted/20 p-4 pb-80"
           >
             {(isBootstrapping || isHistoryLoading || isCreatingSession) && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -592,11 +783,10 @@ export function ChatAssistant({
                 }
 
                 <div
-                  className={`max-w-[92%] space-y-2 rounded-2xl p-3 sm:max-w-[80%] ${
-                    ['function', 'model'].includes(message.author)
+                  className={`max-w-[92%] space-y-2 rounded-2xl p-3 sm:max-w-[80%] ${['function', 'model'].includes(message.author)
                       ? "border border-border bg-card"
                       : "bg-primary text-primary-foreground"
-                  }`}
+                    }`}
                 >
                   <div className="text-sm">
                     <MarkdownMessage text={message.text} inverted={message.author === "user"} />
@@ -604,37 +794,47 @@ export function ChatAssistant({
 
                   {message.listings && message.listings.length > 0 && (
                     <div className="space-y-2 pt-1">
-                      {message.listings.slice(0, 4).map((listing) => (
-                        <div
-                          key={listing.listingId}
-                          className="rounded-xl border border-border bg-background/80 p-3 text-foreground"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="font-medium leading-5">{listing.title}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">{formatListingPrice(listing)}</p>
-                              <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                                <MapPin className="h-3.5 w-3.5" />
-                                {[listing.wardName, listing.provinceName, listing.countryName]
-                                  .filter(Boolean)
-                                  .join(", ")}
-                              </p>
+                      <p className="text-xs text-muted-foreground">Listing previews</p>
+                      <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory">
+                        {message.listings.slice(0, 4).map((listing) => (
+                          <div
+                            key={listing.listingId}
+                            className="min-w-70 max-w-80 shrink-0 snap-start rounded-xl border border-border bg-background/80 p-3 text-foreground"
+                          >
+                            {getListingCoverImage(listing) && (
+                              <img
+                                src={getListingCoverImage(listing)}
+                                alt={listing.title}
+                                className="mb-2 h-32 w-full rounded-lg object-cover"
+                              />
+                            )}
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="font-medium leading-5">{listing.title}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">{formatListingPrice(listing)}</p>
+                                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  {[listing.wardName, listing.provinceName, listing.countryName]
+                                    .filter(Boolean)
+                                    .join(", ")}
+                                </p>
+                              </div>
+                              <Button size="sm" variant="secondary" onClick={() => onViewListing(listing.listingId)}>
+                                View
+                              </Button>
                             </div>
-                            <Button size="sm" variant="secondary" onClick={() => onViewListing(listing.listingId)}>
-                              View
-                            </Button>
+                            {listing.amenityNames?.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {listing.amenityNames.slice(0, 5).map((name) => (
+                                  <Badge key={`${listing.listingId}-${name}`} variant="outline" className="text-[11px]">
+                                    {name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          {listing.amenityNames?.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {listing.amenityNames.slice(0, 5).map((name) => (
-                                <Badge key={`${listing.listingId}-${name}`} variant="outline" className="text-[11px]">
-                                  {name}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -668,166 +868,165 @@ export function ChatAssistant({
           <div className="pointer-events-none absolute inset-x-3 bottom-3 z-20">
             <div className="pointer-events-auto space-y-3 rounded-2xl border border-border/80 bg-background/95 p-4 shadow-lg backdrop-blur supports-backdrop-filter:bg-background/80">
               <div className="flex flex-wrap gap-2">
-              {QUICK_SUGGESTIONS.map((suggestion) => (
-                <Button
-                  key={suggestion}
-                  size="sm"
-                  variant="outline"
-                  className="rounded-full"
-                  onClick={() => setInput(suggestion)}
-                >
-                  {suggestion}
-                </Button>
-              ))}
+                {QUICK_SUGGESTIONS.map((suggestion) => (
+                  <Button
+                    key={suggestion}
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => setInput(suggestion)}
+                  >
+                    {suggestion}
+                  </Button>
+                ))}
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5">
-                <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <Select value={selectedCountryId} onValueChange={setSelectedCountryId}>
-                  <SelectTrigger size="sm" className="h-7 text-xs min-w-27.5" disabled={isContextLoading}>
-                    <SelectValue placeholder="Country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Any country</SelectItem>
-                    {countries.map((country) => (
-                      <SelectItem key={country.countryId} value={country.countryId}>
-                        {country.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="flex items-center gap-1.5">
+                  <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <Select value={selectedCountryId} onValueChange={setSelectedCountryId}>
+                    <SelectTrigger size="sm" className="h-7 text-xs min-w-27.5" disabled={isContextLoading}>
+                      <SelectValue placeholder="Country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any country</SelectItem>
+                      {countries.map((country) => (
+                        <SelectItem key={country.countryId} value={country.countryId}>
+                          {country.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <Select value={selectedProvinceId} onValueChange={setSelectedProvinceId}>
-                  <SelectTrigger size="sm" className="h-7 text-xs min-w-27.5" disabled={isContextLoading || selectedCountryId === "all"}>
-                    <SelectValue placeholder="Province" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Any province</SelectItem>
-                    {provinces.map((province) => (
-                      <SelectItem key={province.provinceId} value={province.provinceId}>
-                        {province.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <Select value={selectedProvinceId} onValueChange={setSelectedProvinceId}>
+                    <SelectTrigger size="sm" className="h-7 text-xs min-w-27.5" disabled={isContextLoading || selectedCountryId === "all"}>
+                      <SelectValue placeholder="Province" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any province</SelectItem>
+                      {provinces.map((province) => (
+                        <SelectItem key={province.provinceId} value={province.provinceId}>
+                          {province.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {isContextLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                {isContextLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
 
-              {amenities.length > 0 && (
-                <>
-                  <div className="h-4 w-px bg-border" />
-                  <Sparkles className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  {amenities.slice(0, 14).map((amenity) => {
-                    const selected = selectedAmenityIds.includes(amenity.amenityId);
-                    return (
-                      <button
-                        key={amenity.amenityId}
-                        type="button"
-                        onClick={() => toggleAmenity(amenity.amenityId)}
-                        disabled={isContextLoading}
-                        className={`rounded-full border px-2 py-0.5 text-[10px] transition ${
-                          selected
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-background text-muted-foreground hover:bg-accent"
-                        }`}
-                      >
-                        {amenity.amenityName}
-                      </button>
-                    );
-                  })}
-                </>
-              )}
+                {amenities.length > 0 && (
+                  <>
+                    <div className="h-4 w-px bg-border" />
+                    <Sparkles className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    {amenities.slice(0, 14).map((amenity) => {
+                      const selected = selectedAmenityIds.includes(amenity.amenityId);
+                      return (
+                        <button
+                          key={amenity.amenityId}
+                          type="button"
+                          onClick={() => toggleAmenity(amenity.amenityId)}
+                          disabled={isContextLoading}
+                          className={`rounded-full border px-2 py-0.5 text-[10px] transition ${selected
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-muted-foreground hover:bg-accent"
+                            }`}
+                        >
+                          {amenity.amenityName}
+                        </button>
+                      );
+                    })}
+                  </>
+                )}
 
-              {isContextLoading && (
-                <>
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                  <Skeleton className="h-5 w-20 rounded-full" />
-                  <Skeleton className="h-5 w-14 rounded-full" />
-                </>
-              )}
+                {isContextLoading && (
+                  <>
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-5 w-14 rounded-full" />
+                  </>
+                )}
               </div>
 
               <div className="space-y-2">
-              <Textarea
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                placeholder="Ask for neighborhoods, budget, amenities, or comparisons"
-                className="min-h-20 resize-none bg-background"
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    sendMessage();
-                  }
-                }}
-              />
+                <Textarea
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  placeholder="Ask for neighborhoods, budget, amenities, or comparisons"
+                  className="min-h-20 resize-none bg-background"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                      event.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                />
 
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Plus className="mr-1 h-4 w-4" /> Context menu
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      <DropdownMenuLabel>Insert into message</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => {
-                          if (selectedAmenityNames.length === 0) return;
-                          setInput((prev) => `${prev}${prev ? " " : ""}amenities: ${selectedAmenityNames.join(", ")}`);
-                        }}
-                      >
-                        Selected amenities
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          if (!currentLocationText) return;
-                          setInput((prev) => `${prev}${prev ? " " : ""}location: ${currentLocationText}`);
-                        }}
-                      >
-                        Selected location
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          if (!listingId) return;
-                          setInput((prev) => `${prev}${prev ? " " : ""}focus listingId: ${listingId}`);
-                        }}
-                      >
-                        Current listing focus
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setInput(QUICK_SUGGESTIONS[0])}>
-                        Insert starter prompt
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Plus className="mr-1 h-4 w-4" /> Context menu
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuLabel>Insert into message</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => {
+                            if (selectedAmenityNames.length === 0) return;
+                            setInput((prev) => `${prev}${prev ? " " : ""}amenities: ${selectedAmenityNames.join(", ")}`);
+                          }}
+                        >
+                          Selected amenities
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            if (!currentLocationText) return;
+                            setInput((prev) => `${prev}${prev ? " " : ""}location: ${currentLocationText}`);
+                          }}
+                        >
+                          Selected location
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            if (!listingId) return;
+                            setInput((prev) => `${prev}${prev ? " " : ""}focus listingId: ${listingId}`);
+                          }}
+                        >
+                          Current listing focus
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setInput(QUICK_SUGGESTIONS[0])}>
+                          Insert starter prompt
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
 
-                  {currentLocationText && <Badge variant="outline">{currentLocationText}</Badge>}
-                  {selectedAmenityNames.length > 0 && (
-                    <Badge variant="outline">{selectedAmenityNames.length} amenities</Badge>
-                  )}
+                    {currentLocationText && <Badge variant="outline">{currentLocationText}</Badge>}
+                    {selectedAmenityNames.length > 0 && (
+                      <Badge variant="outline">{selectedAmenityNames.length} amenities</Badge>
+                    )}
+                  </div>
+
+                  <Button
+                    onClick={() => sendMessage()}
+                    disabled={isBootstrapping || isSending || isHistoryLoading || isCreatingSession || !input.trim()}
+                  >
+                    {isSending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
+                    Send
+                  </Button>
                 </div>
-
-                <Button
-                  onClick={() => sendMessage()}
-                  disabled={isBootstrapping || isSending || isHistoryLoading || isCreatingSession || !input.trim()}
-                >
-                  {isSending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
-                  Send
-                </Button>
-              </div>
               </div>
 
               {error && <p className="text-sm text-destructive">{error}</p>}
             </div>
           </div>
         </div>
-    </div>
+      </div>
   );
 }

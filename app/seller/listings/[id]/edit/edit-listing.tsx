@@ -15,12 +15,12 @@ import {
 } from "@/components/seller/create-listing/step3-media-upload"
 import { Step4Review } from "@/components/seller/create-listing/step4-review"
 import { Button } from "@/components/ui/button"
-import { mockUser } from "@/lib/mock-data"
 import {
   getListingDetails,
   getListingImages,
   getListingVideos,
   getVirtualTour,
+  updateListing,
   updateListingAmenities,
   uploadListingDocuments,
   uploadListingImages,
@@ -33,6 +33,7 @@ import {
   publishListing,
   DocumentType,
   UploadDocumentRequest,
+  submitListingForReview
 } from "@/lib/api-client"
 
 interface FormData {
@@ -312,6 +313,30 @@ export default function EditListingPage() {
 
     try {
       switch (currentStep) {
+        case 1: {
+          await updateListing(formData.id, {
+            title: formData.title,
+            description: formData.description,
+            listingType: formData.transactionType,
+            propertyType: formData.propertyType,
+            price: formData.price,
+            priceCurrency: formData.priceCurrency,
+            negotiable: formData.negotiable,
+            areaSqm: formData.area,
+            bedrooms: formData.bedrooms,
+            bathrooms: formData.bathrooms,
+            floorNumber: formData.floor ?? undefined,
+            yearBuilt: formData.yearBuilt ?? undefined,
+            streetAddress: formData.address,
+            countryId: formData.countryId || undefined,
+            provinceId: formData.provinceId || undefined,
+            wardId: formData.wardId || undefined,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+          })
+          break
+        }
+
         case 2: {
           const newFiles = formData.documents
             .filter((doc) => doc.file)
@@ -361,7 +386,7 @@ export default function EditListingPage() {
         await publishTour(formData.id)
       }
 
-      await publishListing(formData.id)
+      await submitListingForReview(formData.id)
 
       navigate("/seller")
     } catch (err) {
@@ -517,7 +542,7 @@ export default function EditListingPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              {currentStep > 1 && currentStep < 4 && (
+              {currentStep < 4 && (
                 <Button
                   variant="outline"
                   onClick={handleSaveDraft}

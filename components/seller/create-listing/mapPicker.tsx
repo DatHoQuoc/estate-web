@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
@@ -16,6 +17,16 @@ interface MapPickerProps {
   lat: number
   lng: number
   onChange: (lat: number, lng: number) => void
+}
+
+function FollowSelectedLocation({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMapEvents({})
+
+  useEffect(() => {
+    map.setView([lat, lng], map.getZoom())
+  }, [lat, lng, map])
+
+  return null
 }
 
 function LocationMarker({ lat, lng, onChange }: MapPickerProps) {
@@ -44,7 +55,7 @@ function LocationMarker({ lat, lng, onChange }: MapPickerProps) {
 
 export default function MapPicker({ lat, lng, onChange }: MapPickerProps) {
   return (
-    <div className="h-[350px] w-full z-0">
+    <div className="h-87.5 w-full z-0">
       <MapContainer
         center={[lat, lng]}
         zoom={13}
@@ -55,6 +66,7 @@ export default function MapPicker({ lat, lng, onChange }: MapPickerProps) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <FollowSelectedLocation lat={lat} lng={lng} />
         <LocationMarker lat={lat} lng={lng} onChange={onChange} />
       </MapContainer>
     </div>

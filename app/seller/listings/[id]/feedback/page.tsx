@@ -1,34 +1,98 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Eye, Edit } from "lucide-react"
 import { AlertBanner } from "@/components/common/alert-banner"
 import { FeedbackSection } from "@/components/seller/feedback-section"
 import { Button } from "@/components/ui/button"
-import { mockUser, mockListings, mockFeedbackItems } from "@/lib/mock-data"
-import type { FeedbackCategory } from "@/lib/types"
+import type { FeedbackCategory, FeedbackItem, Listing } from "@/lib/types"
+import { getFeedbackByListing } from "@/lib/report-service-api"
+import { getListingDetails } from "@/lib/api-client"
+import type { FeedbackResponse } from "@/lib/report-service-type"
+
+const categoryMap: Record<string, FeedbackCategory> = {
+  IMAGE_QUALITY: "images",
+  DUPLICATE: "data",
+  PRICE_ANOMALY: "price",
+  CONTENT_POLICY: "description",
+}
+
+const severityMap: Record<string, FeedbackItem["severity"]> = {
+  CRITICAL: "error",
+  HIGH: "error",
+  MEDIUM: "warning",
+  LOW: "info",
+  ERROR: "error",
+  WARNING: "warning",
+  INFO: "info",
+}
 
 export default function FeedbackPage() {
   const params = useParams()
   const navigate = useNavigate()
   const listingId = params.id as string
+  const [listing, setListing] = useState<Listing | null>(null)
+  const [feedbackItems, setFeedbackItems] = useState<FeedbackItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const listing = mockListings.find((l) => l.id === listingId) || mockListings[2]
+  useEffect(() => {
+    let mounted = true
 
-  // Group feedback by category
-  const feedbackByCategory = mockFeedbackItems.reduce(
-    (acc, item) => {
+    const load = async () => {
+      setLoading(true)
+      try {
+        const [listingData, feedback] = await Promise.all([
+          getListingDetails(listingId),
+          getFeedbackByListing(listingId),
+        ])
+
+        if (!mounted) return
+        setListing(listingData)
+
+        const mappedItems: FeedbackItem[] = feedback.flatMap((report: FeedbackResponse) => {
+          const category = categoryMap[report.checkType] || "data"
+
+          return report.feedbackItems.map((item) => ({
+            id: item.feedbackItemId,
+            category,
+            field: item.targetAttribute,
+            severity: severityMap[item.severity] || "warning",
+            message: item.errorMessage,
+            suggestedAction: item.suggestion,
+            affectedField: item.targetAttribute,
+          }))
+        })
+
+        setFeedbackItems(mappedItems)
+        setError(null)
+      } catch (err) {
+        if (!mounted) return
+        setError(err instanceof Error ? err.message : "Failed to load feedback")
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      mounted = false
+    }
+  }, [listingId])
+
+  const feedbackByCategory = useMemo(() => {
+    return feedbackItems.reduce((acc, item) => {
       if (!acc[item.category]) {
         acc[item.category] = []
       }
       acc[item.category].push(item)
       return acc
-    },
-    {} as Record<FeedbackCategory, typeof mockFeedbackItems>
-  )
+    }, {} as Record<FeedbackCategory, FeedbackItem[]>)
+  }, [feedbackItems])
 
-  const errorCount = mockFeedbackItems.filter((i) => i.severity === "error").length
-  const warningCount = mockFeedbackItems.filter((i) => i.severity === "warning").length
+  const errorCount = feedbackItems.filter((i) => i.severity === "error").length
+  const warningCount = feedbackItems.filter((i) => i.severity === "warning").length
 
   const handleFixItem = (itemId: string, field?: string) => {
     navigate(`/seller/listings/${listingId}/edit?focus=${field}`)
@@ -40,6 +104,22 @@ export default function FeedbackPage() {
 
   const handleFixAndResubmit = () => {
     navigate(`/seller/listings/${listingId}/edit`)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground text-sm">Loading feedback...</p>
+      </div>
+    )
+  }
+
+  if (!listing) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground text-sm">{error || "Listing feedback unavailable."}</p>
+      </div>
+    )
   }
 
   return (

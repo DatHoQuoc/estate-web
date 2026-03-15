@@ -19,7 +19,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { mockStaffUser, mockChecklist } from "@/lib/mock-data";
 import type { ChecklistItem, AICheck, Listing } from "@/lib/types";
 import type { FeedbackResponse } from "@/lib/report-service-type";
 import type { TourSceneResponse, ListingReviewResponse } from "@/lib/api-client";
@@ -39,6 +38,14 @@ import { useSearchParams } from "react-router-dom";
 import { VirtualTourEditor } from "@/components/virtual-tour/VirtualTourEditor";
 import { useVirtualTour } from "@/components/virtual-tour/hooks/useVirtualTour";
 import FullPageLoading from "@/components/common/fullpage-loading";
+
+const defaultChecklist: ChecklistItem[] = [
+  { id: "listing_title", label: "Title is clear and policy-compliant", checked: false, required: true },
+  { id: "listing_desc", label: "Description is complete and accurate", checked: false, required: true },
+  { id: "listing_media", label: "Images/documents quality is acceptable", checked: false, required: true },
+  { id: "listing_price", label: "Price and key facts are valid", checked: false, required: true },
+  { id: "listing_location", label: "Location details are consistent", checked: false, required: true },
+];
 
 function mapFeedbackToAIChecks(feedbacks: FeedbackResponse[]): AICheck[] {
   const checkTypeMap: Record<string, AICheck["type"]> = {
@@ -71,7 +78,7 @@ export default function StaffReviewDetailPage() {
   const listingId = params.id as string;
 
   const [listing, setListing] = useState<Listing | null>(null);
-  const [checklist, setChecklist] = useState<ChecklistItem[]>(mockChecklist);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(defaultChecklist);
   const [staffNotes, setStaffNotes] = useState("");
   const [feedbackToSeller, setfeedbackToSeller] = useState("");
   const [checks, setChecks] = useState<AICheck[]>([]);

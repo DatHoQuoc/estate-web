@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import PageFooter from "@/components/common/page-footer";
-import { mockUser } from "@/lib/mock-data";
 
 import { HeroSection } from "@/components/home/hero-section";
 import { FeaturesSection } from "@/components/home/features-section";
@@ -35,7 +34,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <ScrollingImage />
-      <main className="flex-grow pt-4">
+      <main className="grow pt-4">
         <HeroSection scrollY={scrollY} />
         <FeaturesSection />
         <PortalCardsSection />

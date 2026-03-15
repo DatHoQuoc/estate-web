@@ -13,7 +13,7 @@ import {
   getPendingReviewListings,
 } from "@/lib/api-client";
 import type { Listing, MergedListing } from "@/lib/types";
-import { mockStaffUser, mockStaffStats } from "@/lib/mock-data";
+import { useAuth } from "@/components/auth/AuthContext";
 
 const priorityFilterOptions = [
   { value: "all", label: "All Priority" },
@@ -33,6 +33,7 @@ const statusFilterOptions = [
 function StaffDashboardContent() {
   const navigate = useNavigate();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -102,7 +103,7 @@ function StaffDashboardContent() {
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "unassigned" && !listing.assignedTo) ||
-      (statusFilter === "assigned" && listing.assignedTo === mockStaffUser.id) ||
+      (statusFilter === "assigned" && listing.assignedTo === user?.id) ||
       (statusFilter === listing.status);
 
     return matchesSearch && matchesPriority && matchesStatus;
@@ -115,6 +116,10 @@ function StaffDashboardContent() {
   const handleView = (listingId: string) => {
     navigate(`/staff/review/${listingId}`);
   };
+
+  const assignedToMe = listings.filter((listing) => listing.assignedTo === user?.id).length;
+  const reviewedToday = 0;
+  const avgReviewTime = "N/A";
 
   return (
     <div className="min-h-screen bg-background">
@@ -134,24 +139,24 @@ function StaffDashboardContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatsCard
               title="Total Queue"
-              value={mockStaffStats.totalQueue}
+              value={listings.length}
               icon={<ClipboardList className="h-5 w-5" />}
             />
             <StatsCard
               title="Assigned to Me"
-              value={mockStaffStats.assignedToMe}
+              value={assignedToMe}
               icon={<UserCheck className="h-5 w-5" />}
               variant="info"
             />
             <StatsCard
               title="Reviewed Today"
-              value={mockStaffStats.reviewedToday}
+              value={reviewedToday}
               icon={<CheckCircle className="h-5 w-5" />}
               variant="success"
             />
             <StatsCard
               title="Avg Review Time"
-              value={mockStaffStats.avgReviewTime}
+              value={avgReviewTime}
               icon={<Timer className="h-5 w-5" />}
               variant="warning"
             />
@@ -183,7 +188,7 @@ function StaffDashboardContent() {
           {/* Review Queue Table */}
           <ReviewQueueTable
             listings={filteredListings}
-            currentUserId={mockStaffUser.id}
+            currentUserId={user?.id || ""}
             onClaim={handleClaim}
             onView={handleView}
           />

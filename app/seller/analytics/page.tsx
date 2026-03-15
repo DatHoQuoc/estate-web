@@ -3,8 +3,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { SellerSidebar } from "@/components/layout/seller-sidebar";
 import { StatsCard } from "@/components/common/stats-card";
-import { BarChart3, TrendingUp, Eye, MousePointerClick } from "lucide-react";
-import { listSellerListings } from "@/lib/api-client";
+import { TrendingUp, Eye, MousePointerClick } from "lucide-react";
+import { getListingViewStats, listSellerListings } from "@/lib/api-client";
 import { Listing } from "@/lib/types";
 import { 
   BarChart, 
@@ -21,31 +21,77 @@ import {
 
 export default function SellerAnalyticsPage() {
   const [listings, setListings] = useState<Listing[]>([]);
+  const [seriesByDay, setSeriesByDay] = useState<{ name: string; views: number }[]>([]);
+  const [viewsByListing, setViewsByListing] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listSellerListings()
-      .then(setListings)
-      .finally(() => setLoading(false));
+    let mounted = true;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await listSellerListings();
+        if (!mounted) return;
+        setListings(data);
+
+        const to = new Date();
+        const from = new Date(to);
+        from.setDate(from.getDate() - 7);
+
+        const settled = await Promise.allSettled(
+          data.map(async (listing) => {
+            const stats = await getListingViewStats(listing.id, {
+              accuracy: "DAY",
+              from: from.toISOString(),
+              to: to.toISOString(),
+            });
+            return { listingId: listing.id, title: listing.title, stats };
+          }),
+        );
+
+        if (!mounted) return;
+
+        const dailyAccumulator = new Map<string, number>();
+        const listingAccumulator: Record<string, number> = {};
+
+        settled.forEach((result) => {
+          if (result.status !== "fulfilled") return;
+          const { listingId, stats } = result.value;
+          listingAccumulator[listingId] = stats.totalViews || 0;
+
+          stats.data?.forEach((point) => {
+            const dayKey = point.bucket.slice(0, 10);
+            dailyAccumulator.set(dayKey, (dailyAccumulator.get(dayKey) || 0) + point.views);
+          });
+        });
+
+        const chartData = Array.from(dailyAccumulator.entries())
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([day, views]) => ({
+            name: new Date(day).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+            views,
+          }));
+
+        setViewsByListing(listingAccumulator);
+        setSeriesByDay(chartData);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const stats = useMemo(() => {
-    const totalViews = listings.reduce((acc, curr) => acc + (curr.views || 0), 0);
+    const totalViews = Object.values(viewsByListing).reduce((acc, curr) => acc + curr, 0);
     const avgViews = listings.length > 0 ? Math.round(totalViews / listings.length) : 0;
-    
-    // Mocking some data for the chart since real time-series data isn't available from current API
-    const chartData = [
-      { name: "Mon", views: 400, clicks: 240 },
-      { name: "Tue", views: 300, clicks: 139 },
-      { name: "Wed", views: 200, clicks: 980 },
-      { name: "Thu", views: 278, clicks: 390 },
-      { name: "Fri", views: 189, clicks: 480 },
-      { name: "Sat", views: 239, clicks: 380 },
-      { name: "Sun", views: 349, clicks: 430 },
-    ];
 
-    return { totalViews, avgViews, chartData };
-  }, [listings]);
+    return { totalViews, avgViews };
+  }, [listings, viewsByListing]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,7 +120,7 @@ export default function SellerAnalyticsPage() {
             />
             <StatsCard
               title="Click-Through Rate"
-              value="3.2%"
+              value={loading ? "..." : "N/A"}
               icon={<MousePointerClick className="h-5 w-5" />}
               variant="warning"
             />
@@ -82,20 +128,19 @@ export default function SellerAnalyticsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="p-6 rounded-xl border bg-card">
-              <h3 className="text-lg font-semibold mb-6">Views & Clicks Over Time</h3>
-              <div className="h-[300px] w-full">
+              <h3 className="text-lg font-semibold mb-6">Views Over Time (Last 7 Days)</h3>
+              <div className="h-75 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={stats.chartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <LineChart data={seriesByDay}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={12} />
+                    <YAxis stroke="var(--muted-foreground)" fontSize={12} />
                     <Tooltip 
-                      contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}
-                      itemStyle={{ color: "hsl(var(--foreground))" }}
+                      contentStyle={{ backgroundColor: "var(--card)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                      itemStyle={{ color: "var(--foreground)" }}
                     />
                     <Legend />
-                    <Line type="monotone" dataKey="views" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                    <Line type="monotone" dataKey="clicks" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="views" stroke="var(--primary)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -103,17 +148,17 @@ export default function SellerAnalyticsPage() {
 
             <div className="p-6 rounded-xl border bg-card">
               <h3 className="text-lg font-semibold mb-6">Listing Performance Comparison</h3>
-              <div className="h-[300px] w-full">
+              <div className="h-75 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={listings.slice(0, 5).map(l => ({ name: l.title.substring(0, 10) + "...", views: l.views }))}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <BarChart data={listings.slice(0, 5).map((l) => ({ name: l.title.substring(0, 10) + "...", views: viewsByListing[l.id] ?? l.views ?? 0 }))}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                    <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={12} />
+                    <YAxis stroke="var(--muted-foreground)" fontSize={12} />
                     <Tooltip 
-                      contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}
-                      itemStyle={{ color: "hsl(var(--foreground))" }}
+                      contentStyle={{ backgroundColor: "var(--card)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                      itemStyle={{ color: "var(--foreground)" }}
                     />
-                    <Bar dataKey="views" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="views" fill="var(--primary)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

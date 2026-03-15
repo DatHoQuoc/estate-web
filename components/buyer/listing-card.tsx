@@ -16,9 +16,9 @@ interface ListingCardProps {
 
 function formatPrice(value?: number) {
   if (!value && value !== 0) return "Contact for price";
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${value.toLocaleString()}`;
-  return `$${value}`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M VND`;
+  if (value >= 1_000) return `${value.toLocaleString("vi-VN")} VND`;
+  return `${value} VND`;
 }
 
 export function ListingCard({ listing, onView, onConnect, onAskAI, highlight }: ListingCardProps) {
@@ -29,7 +29,7 @@ export function ListingCard({ listing, onView, onConnect, onAskAI, highlight }: 
       {cover && (
         <div className="relative aspect-video text-white">
           <img src={cover.url} alt={cover.alt || listing.title} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
           <div className="absolute top-3 left-3 flex gap-2">
             <span className="px-2 py-1 text-xs font-medium rounded-full bg-white/90 text-foreground capitalize">
               {listing.propertyType}

@@ -32,8 +32,8 @@ export const mockSearchListings: SearchListing[] = [
     },
     pricing: {
       price: 450000,
-      currency: "USD",
-      formattedPrice: "$450,000",
+      currency: "VND",
+      formattedPrice: "450,000 VND",
       pricePerSqm: 3750,
     },
     legal: {
@@ -110,8 +110,8 @@ export const mockSearchListings: SearchListing[] = [
     },
     pricing: {
       price: 850000,
-      currency: "USD",
-      formattedPrice: "$850,000",
+      currency: "VND",
+      formattedPrice: "850,000 VND",
       pricePerSqm: 3035.71,
     },
     legal: {
@@ -171,8 +171,8 @@ export const mockSearchListings: SearchListing[] = [
     },
     pricing: {
       price: 1200,
-      currency: "USD",
-      formattedPrice: "$1,200",
+      currency: "VND",
+      formattedPrice: "1,200 VND",
       pricePerSqm: 26.67,
     },
     legal: {
@@ -231,8 +231,8 @@ export const mockSearchListings: SearchListing[] = [
     },
     pricing: {
       price: 2500000,
-      currency: "USD",
-      formattedPrice: "$2,500,000",
+      currency: "VND",
+      formattedPrice: "2,500,000 VND",
       pricePerSqm: 5555.56,
     },
     legal: {
@@ -292,8 +292,8 @@ export const mockSearchListings: SearchListing[] = [
     },
     pricing: {
       price: 5500,
-      currency: "USD",
-      formattedPrice: "$5,500/mo",
+      currency: "VND",
+      formattedPrice: "5,500 VND/mo",
       pricePerSqm: 27.5,
     },
     legal: {

@@ -3,174 +3,113 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Home,
+  ArrowRight,
   CheckCircle,
   Clock,
-  XCircle,
-  Plus,
   Eye,
-  Edit,
-  Trash2,
-  Upload,
-  RotateCcw,
+  LineChart,
+  Plus,
+  XCircle,
 } from "lucide-react";
 import { SellerSidebar } from "@/components/layout/seller-sidebar";
 import { StatsCard } from "@/components/common/stats-card";
-import { SearchBar } from "@/components/common/search-bar";
-import { FilterDropdown } from "@/components/common/filter-dropdown";
-import { Pagination } from "@/components/common/pagination";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { mockUser } from "@/lib/mock-data";
-import {
-  listSellerListings,
-  submitListingForReview,
-  unpublishListing,
+  getSellerDashboardSummary,
+  getSellerDashboardViewsSeries,
+  getSellerNeedsAttention,
+  getSellerRecentListings,
+  getSellerTopPerformers,
+  type SellerDashboardSummaryResponse,
+  type SellerNeedsAttentionItem,
+  type SellerRecentListingItem,
+  type SellerTopPerformerItem,
 } from "@/lib/api-client";
-import type { Listing } from "@/lib/types";
-import { cn } from "@/lib/utils";
-
-const statusFilterOptions = [
-  { value: "all", label: "All Status" },
-  { value: "PUBLISHED", label: "Published" },
-  { value: "PENDING_REVIEW", label: "Pending Review" },
-  { value: "REJECTED", label: "Rejected" },
-  { value: "DRAFT", label: "Draft" },
-];
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart as RechartsLineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 
 function SellerDashboardContent() {
   const navigate = useNavigate();
 
-  const [listings, setListings] = useState<Listing[]>([]);
-
+  const [summary, setSummary] = useState<SellerDashboardSummaryResponse | null>(null);
+  const [seriesByDay, setSeriesByDay] = useState<{ name: string; views: number }[]>([]);
+  const [topPerformers, setTopPerformers] = useState<SellerTopPerformerItem[]>([]);
+  const [needsAttention, setNeedsAttention] = useState<SellerNeedsAttentionItem[]>([]);
+  const [recentListings, setRecentListings] = useState<SellerRecentListingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    loadListings();
+    let mounted = true;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const to = new Date();
+        const from = new Date(to);
+        from.setDate(from.getDate() - 7);
+
+        const [summaryData, seriesResponse, topData, attentionData, recentData] = await Promise.all(
+          [
+            getSellerDashboardSummary(),
+            getSellerDashboardViewsSeries({
+              accuracy: "DAY",
+              from: from.toISOString(),
+              to: to.toISOString(),
+            }),
+            getSellerTopPerformers("7d", 5),
+            getSellerNeedsAttention(4),
+            getSellerRecentListings(5),
+          ],
+        );
+
+        if (!mounted) return;
+
+        const chartData = (seriesResponse.data || []).map((point) => ({
+          name: new Date(point.bucket).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+          views: point.views,
+        }));
+
+        setSummary(summaryData);
+        setSeriesByDay(chartData);
+        setTopPerformers(topData.items || []);
+        setNeedsAttention(attentionData.items || []);
+        setRecentListings(recentData.items || []);
+        setError(null);
+      } catch (err) {
+        if (!mounted) return;
+        setError(err instanceof Error ? err.message : "Failed to load dashboard data");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const loadListings = () => {
-    let isMounted = true;
-    setLoading(true);
-    listSellerListings()
-      .then((data) => {
-        if (!isMounted) return;
-        setListings(data);
-        setError(null);
-      })
-      .catch((err) => {
-        console.error(err);
-        if (isMounted) setError(err.message || "Failed to load listings");
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
-    return () => {
-      isMounted = false;
-    };
-  };
-
-  const filteredListings = useMemo(() => {
-    return listings.filter((listing) => {
-      const matchesSearch = listing.title
-        .toLowerCase()
-        .includes(search.toLowerCase());
-      const matchesStatus =
-        statusFilter === "all" || listing.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [listings, search, statusFilter]);
-
   const listingStats = useMemo(() => {
-    const total = listings.length;
-    const published = listings.filter((l) => l.status === "PUBLISHED").length;
-    const pending = listings.filter((l) => l.status === "PENDING_REVIEW").length;
-    const rejected = listings.filter((l) => l.status === "REJECTED").length;
-    return { total, published, pending, rejected };
-  }, [listings]);
-
-
-  const handleView = (id: string) => {
-    navigate(`/seller/listings/${id}`);
-  };
-
-  const handleEdit = (id: string) => {
-    navigate(`/seller/listings/${id}/edit`);
-  };
-
-  const handleDelete = (id: string) => {
-    console.log("Delete listing:", id);
-  };
-
-  const handlePublish = async (id: string) => {
-    setActionLoading(id);
-    try {
-      await submitListingForReview(id);
-      await loadListings();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleUnpublish = async (id: string) => {
-    setActionLoading(id);
-    try {
-      await unpublishListing(id);
-      await loadListings();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<
-      string,
-      { bg: string; text: string; label: string }
-    > = {
-      PUBLISHED: {
-        bg: "bg-emerald-100",
-        text: "text-emerald-700",
-        label: "Published",
-      },
-      PENDING_REVIEW: {
-        bg: "bg-amber-100",
-        text: "text-amber-700",
-        label: "Pending Review",
-      },
-      DRAFT: { bg: "bg-gray-100", text: "text-gray-700", label: "Draft" },
-      REJECTED: { bg: "bg-red-100", text: "text-red-700", label: "Rejected" },
+    return {
+      total: summary?.totalListings ?? 0,
+      published: summary?.published ?? 0,
+      pending: summary?.pendingReview ?? 0,
+      rejected: summary?.rejected ?? 0,
+      totalViews: summary?.totalViews7d ?? 0,
     };
-
-
-    const variant = variants[status] || variants.draft;
-    return (
-      <span
-        className={cn(
-          "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-          variant.bg,
-          variant.text,
-        )}
-      >
-        {variant.label}
-      </span>
-    );
-  };
+  }, [summary]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -181,29 +120,27 @@ function SellerDashboardContent() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-foreground">
-                My Listings
+                Seller Dashboard
               </h1>
               <p className="text-muted-foreground text-sm mt-1">
-                Manage and track all your property listings
+                Unified overview of portfolio health, visibility, and required actions.
               </p>
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => navigate("/profile/settings?tab=wallet")}>Create Wallet</Button>
-
-
+              <Button variant="outline" onClick={() => navigate("/seller/listings")}>Open My Listings</Button>
               <Button onClick={() => navigate("/seller/create")}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create New Listing
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             <StatsCard
               title="Total Listings"
               value={listingStats.total}
-              icon={<Home className="h-5 w-5" />}
-              trend={{ value: 0, direction: "up" }}
+              icon={<LineChart className="h-5 w-5" />}
             />
             <StatsCard
               title="Published"
@@ -223,211 +160,108 @@ function SellerDashboardContent() {
               icon={<XCircle className="h-5 w-5" />}
               variant="danger"
             />
-          </div>
-
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <SearchBar
-              placeholder="Search listings..."
-              value={search}
-              onChange={setSearch}
-            />
-            <FilterDropdown
-              options={statusFilterOptions}
-              selected={statusFilter}
-              onChange={setStatusFilter}
-              placeholder="Status"
+            <StatsCard
+              title="Total Views (7d)"
+              value={listingStats.totalViews}
+              icon={<Eye className="h-5 w-5" />}
+              variant="info"
             />
           </div>
 
-          <div className="bg-white rounded-lg border border-border overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Property
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {loading ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-6 py-8 text-center text-sm text-muted-foreground"
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="p-6 rounded-xl border bg-card">
+              <h3 className="text-lg font-semibold mb-4">Portfolio Views Over Time</h3>
+              <div className="h-75 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsLineChart data={seriesByDay}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                    <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={12} />
+                    <YAxis stroke="var(--muted-foreground)" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "var(--card)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                      itemStyle={{ color: "var(--foreground)" }}
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="views" stroke="var(--primary)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  </RechartsLineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-xl border bg-card">
+              <h3 className="text-lg font-semibold mb-4">Top Performing Listings</h3>
+              <div className="h-75 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topPerformers}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                    <XAxis dataKey="title" stroke="var(--muted-foreground)" fontSize={12} />
+                    <YAxis stroke="var(--muted-foreground)" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "var(--card)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                      itemStyle={{ color: "var(--foreground)" }}
+                    />
+                    <Bar dataKey="views" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="rounded-xl border bg-card p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Needs Attention</h3>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/seller/listings")}>Open all <ArrowRight className="ml-1 h-4 w-4" /></Button>
+              </div>
+              {needsAttention.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No listings need action right now.</p>
+              ) : (
+                <div className="space-y-3">
+                  {needsAttention.map((listing) => (
+                    <button
+                      key={listing.listingId}
+                      type="button"
+                      onClick={() => navigate(`/seller/listings/${listing.listingId}`)}
+                      className="w-full text-left rounded-lg border p-3 hover:bg-muted transition-colors"
                     >
-                      Loading listings...
-                    </td>
-                  </tr>
-                ) : filteredListings.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-6 py-8 text-center text-sm text-muted-foreground"
-                    >
-                      No listings found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredListings.map((listing) => {
-                    const isLoading = actionLoading === listing.id;
-                    return (
-                      <tr key={listing.id} className="hover:bg-muted/30">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={listing.featuredImageUrl}
-                              alt={listing.title}
-                              className="w-12 h-12 rounded-lg object-cover"
-                            />
-                            <div>
-                              <p className="text-sm font-medium text-foreground">
-                                {listing.title}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {listing.location.district},{" "}
-                                {listing.location.city}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-foreground">
-                          ${listing.price.toLocaleString()}
-                        </td>
-                        <td className="px-6 py-4">
-                          {getStatusBadge(listing.status)}
-                        </td>
+                      <p className="text-sm font-medium text-foreground">{listing.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {listing.reason || (listing.status === "REJECTED" ? "Rejected - requires correction and resubmission" : "Draft - complete details and submit")}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                        <td className="px-6 py-4 text-sm text-muted-foreground">
-                          {new Date(listing.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                disabled={isLoading}
-                              >
-                                {isLoading ? "..." : "Actions"}
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => handleView(listing.id)}
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                View
-                              </DropdownMenuItem>
-
-                              {listing.status === "DRAFT" && (
-                                <>
-                                  <DropdownMenuItem
-                                    onClick={() => handleEdit(listing.id)}
-                                  >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handlePublish(listing.id)}
-                                  >
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Submit for Review
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDelete(listing.id)}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-
-                              {listing.status === "PENDING_REVIEW" && (
-                                <DropdownMenuItem
-                                  onClick={() => handleUnpublish(listing.id)}
-                                >
-                                  <RotateCcw className="mr-2 h-4 w-4" />
-                                  Withdraw
-                                </DropdownMenuItem>
-                              )}
-
-                              {listing.status === "DRAFT" && (
-                                <>
-                                  <DropdownMenuItem
-                                    onClick={() => handleUnpublish(listing.id)}
-                                  >
-                                    <RotateCcw className="mr-2 h-4 w-4" />
-                                    Unpublish
-                                  </DropdownMenuItem>
-                                  {/* listing.mediaType === "photos_and_tour" &&  */}
-                                  {
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        navigate(
-                                          `/seller/listings/${listing.id}/tour/edit`,
-                                        )
-                                      }
-                                    >
-                                      <Edit className="mr-2 h-4 w-4" />
-                                      Edit Tour
-                                    </DropdownMenuItem>
-                                  }
-                                </>
-                              )}
-
-                              {listing.status === "REJECTED" && (
-                                <>
-                                  <DropdownMenuItem
-                                    onClick={() => handleEdit(listing.id)}
-                                  >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit & Resubmit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDelete(listing.id)}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+            <div className="rounded-xl border bg-card p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Recent Listings Snapshot</h3>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/seller/listings")}>Manage <ArrowRight className="ml-1 h-4 w-4" /></Button>
+              </div>
+              <div className="space-y-3">
+                {recentListings.map((listing) => (
+                  <div key={listing.listingId} className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{listing.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(listing.updatedAt).toLocaleDateString()} · {listing.views ?? 0} views
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => navigate(`/seller/listings/${listing.listingId}`)}>
+                      View
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {error && (
             <div className="mt-4 text-sm text-destructive">
-              Failed to load listings: {error}
+              Failed to load dashboard data: {error}
             </div>
           )}
-
-          <div className="mt-4 flex justify-center">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={5}
-              onPageChange={setCurrentPage}
-            />
-          </div>
         </div>
       </main>
     </div>

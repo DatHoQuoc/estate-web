@@ -14,7 +14,6 @@ import {
 } from "@/components/seller/create-listing/step3-media-upload";
 import { Step4Review } from "@/components/seller/create-listing/step4-review";
 import { Button } from "@/components/ui/button";
-import { mockUser } from "@/lib/mock-data";
 import {
   createListingDraft,
   updateListingAmenities,
@@ -255,7 +254,7 @@ export default function CreateListingPage() {
             listingType: formData.transactionType,
             propertyType: formData.propertyType,
             price: formData.price,
-            priceCurrency: "USD",
+            priceCurrency: "VND",
             areaSqm: formData.area,
             bedrooms: formData.bedrooms,
             bathrooms: formData.bathrooms,
@@ -516,6 +515,10 @@ export default function CreateListingPage() {
                   areaSqm: formData.area,
                   bedrooms: formData.bedrooms,
                   bathrooms: formData.bathrooms,
+                  latitude: formData.latitude,
+                  longitude: formData.longitude,
+                  yearBuilt: formData.yearBuilt ?? undefined,
+                  floorNumber: formData.floor ?? undefined,
                   provinceId: formData.provinceId,
                   countryId: formData.countryId,
                   wardId: formData.wardId,

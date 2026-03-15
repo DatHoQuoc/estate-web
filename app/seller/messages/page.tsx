@@ -6,14 +6,24 @@ import { MessageSquare, Phone, User, Send } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
+interface ConversationItem {
+  id: string;
+  name: string;
+  lastMessage: string;
+  time: string;
+  unread: boolean;
+}
+
 export default function SellerMessagesPage() {
   const [search, setSearch] = useState("");
-  
-  const mockConversations = [
-    { id: 1, name: "John Doe", lastMessage: "Is this property still available?", time: "2h ago", unread: true },
-    { id: 2, name: "Alice Smith", lastMessage: "I would like to schedule a tour for tomorrow.", time: "5h ago", unread: false },
-    { id: 3, name: "Bob Johnson", lastMessage: "Thank you for the information.", time: "Yesterday", unread: false },
-  ];
+  const [conversations] = useState<ConversationItem[]>([]);
+  const selectedConversation = conversations[0] || null;
+
+  const filteredConversations = conversations.filter((conv) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return conv.name.toLowerCase().includes(q) || conv.lastMessage.toLowerCase().includes(q);
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,18 +48,22 @@ export default function SellerMessagesPage() {
                 />
               </div>
               <div className="flex-1 overflow-y-auto">
-                {mockConversations.map((conv) => (
-                  <div 
-                    key={conv.id} 
-                    className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${conv.unread ? 'bg-primary/5' : ''}`}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <h4 className="font-semibold text-sm">{conv.name}</h4>
-                      <span className="text-[10px] text-muted-foreground">{conv.time}</span>
+                {filteredConversations.length > 0 ? (
+                  filteredConversations.map((conv) => (
+                    <div
+                      key={conv.id}
+                      className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${conv.unread ? "bg-primary/5" : ""}`}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <h4 className="font-semibold text-sm">{conv.name}</h4>
+                        <span className="text-[10px] text-muted-foreground">{conv.time}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{conv.lastMessage}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">{conv.lastMessage}</p>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="p-6 text-sm text-muted-foreground">No conversations yet.</div>
+                )}
               </div>
             </div>
 
@@ -61,8 +75,8 @@ export default function SellerMessagesPage() {
                     <User className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm">John Doe</h4>
-                    <span className="text-[10px] text-emerald-500 font-medium">Online</span>
+                    <h4 className="font-semibold text-sm">{selectedConversation?.name || "No active chat"}</h4>
+                    <span className="text-[10px] text-muted-foreground font-medium">Awaiting conversation stream</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -72,20 +86,8 @@ export default function SellerMessagesPage() {
               </div>
 
               <div className="flex-1 p-6 flex flex-col gap-4 overflow-y-auto">
-                <div className="flex justify-start">
-                  <div className="max-w-[70%] p-3 rounded-2xl bg-muted text-sm">
-                    Is this property at District 1 still available for sale?
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <div className="max-w-[70%] p-3 rounded-2xl bg-primary text-primary-foreground text-sm">
-                    Yes, it is! Would you like to see more details or schedule a visit?
-                  </div>
-                </div>
-                <div className="flex justify-start">
-                  <div className="max-w-[70%] p-3 rounded-2xl bg-muted text-sm">
-                    Yes, I would like to schedule a tour for tomorrow afternoon if possible.
-                  </div>
+                <div className="text-sm text-muted-foreground">
+                  Messaging data source is not connected yet.
                 </div>
               </div>
 

@@ -10,6 +10,10 @@ export function Breadcrumbs() {
   if (pathnames.length === 0) {
     return null; // Don't show breadcrumbs on home page
   }
+
+  if (pathnames[0] === "seller") {
+    return null;
+  }
   // auth
   const { user } = useAuth();
   return (

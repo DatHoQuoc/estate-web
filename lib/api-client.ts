@@ -37,7 +37,7 @@ interface ApiListingResponse {
   buildingName?: string;
   latitude?: number;
   longitude?: number;
-  featuredImageUrl: string;
+  featuredImageUrl?: string;
   viewCount?: number;
   saveCount?: number;
   contactCount?: number;
@@ -52,7 +52,79 @@ interface ApiListingResponse {
     amenityCategory: string;
     iconUrl: string;
   }>;
-  imageUrls: string[];
+  imageUrls?: string[];
+}
+
+type ViewAccuracy = "MONTH" | "DAY" | "HOUR" | "QUARTER_HOUR";
+
+interface ViewBucketResponse {
+  bucket: string;
+  views: number;
+}
+
+export interface ViewStatsResponse {
+  listingId: string;
+  accuracy: ViewAccuracy;
+  from?: string;
+  to?: string;
+  totalViews: number;
+  data: ViewBucketResponse[];
+}
+
+export interface SellerDashboardSummaryResponse {
+  totalListings: number;
+  published: number;
+  pendingReview: number;
+  rejected: number;
+  draft: number;
+  totalViews7d: number;
+}
+
+export interface SellerDashboardSeriesPoint {
+  bucket: string;
+  views: number;
+}
+
+export interface SellerDashboardViewsSeriesResponse {
+  from: string;
+  to: string;
+  accuracy: ViewAccuracy;
+  data: SellerDashboardSeriesPoint[];
+}
+
+export interface SellerTopPerformerItem {
+  listingId: string;
+  title: string;
+  views: number;
+}
+
+export interface SellerTopPerformersResponse {
+  range: string;
+  items: SellerTopPerformerItem[];
+}
+
+export interface SellerNeedsAttentionItem {
+  listingId: string;
+  title: string;
+  status: "REJECTED" | "DRAFT" | string;
+  reason?: string;
+  updatedAt: string;
+}
+
+export interface SellerNeedsAttentionResponse {
+  items: SellerNeedsAttentionItem[];
+}
+
+export interface SellerRecentListingItem {
+  listingId: string;
+  title: string;
+  status: string;
+  views: number;
+  updatedAt: string;
+}
+
+export interface SellerRecentListingsResponse {
+  items: SellerRecentListingItem[];
 }
 
 export interface CreateListingPayload {
@@ -98,7 +170,23 @@ export interface POIResponse {
 }
 
 export interface ListingReviewResponse {
-
+  reviewId: string;
+  listingId: string;
+  reviewerId: string;
+  reviewerRole: string;
+  feedbackReportId?: string;
+  previousStatus?: string;
+  newStatus?: string;
+  reviewAction: "APPROVE" | "REJECT" | "REQUEST_CHANGES";
+  staffNotesInternal?: string;
+  feedbackToSeller?: string;
+  rejectionReason?: string;
+  requiredChanges?: { field: string; issue: string; suggestion: string }[];
+  checklistResults?: Record<string, boolean>;
+  isResubmission?: boolean;
+  previousReviewId?: string;
+  reviewVersion?: number;
+  reviewedAt?: string;
 }
 export interface ChatListingPublishedMessage {
   listingId: string;
@@ -356,6 +444,8 @@ export function replaceMinioUrl(url: string): string {
 }
 
 function mapApiListing(listing: ApiListingResponse): Listing {
+  const imageUrls = listing.imageUrls || (listing.featuredImageUrl ? [listing.featuredImageUrl] : []);
+
   return {
     id: listing.listingId,
     title: listing.title,
@@ -380,7 +470,7 @@ function mapApiListing(listing: ApiListingResponse): Listing {
       lat: listing.latitude ?? 0,
       lng: listing.longitude ?? 0,
     },
-    images: (listing.imageUrls || []).map((url, index) => {
+    images: imageUrls.map((url, index) => {
       const idMatch = url.match(/\/images\/([^.?]+)/);
       const id = idMatch ? idMatch[1] : `img-${index}`;
 
@@ -424,7 +514,7 @@ function mapApiListing(listing: ApiListingResponse): Listing {
     floor: listing.floorNumber,
     direction: undefined,
     legalStatus: undefined,
-    featuredImageUrl: listing.featuredImageUrl ?? undefined,
+    featuredImageUrl: listing.featuredImageUrl || "",
     submittedAt: listing.submittedAt,
   };
 }
@@ -445,6 +535,96 @@ export async function getListingDetails(id: string): Promise<Listing> {
     `${API_BASE}/api/v1/seller/listings/${id}`,
   );
   return mapApiListing(listing);
+}
+
+export async function listPublishedListings(
+  page = 0,
+  size = 30,
+): Promise<Listing[]> {
+  const data = await fetchJson<{
+    content?: ApiListingResponse[];
+    data?: ApiListingResponse[];
+    items?: ApiListingResponse[];
+  }>(`${API_BASE}/api/v1/listings?page=${page}&size=${size}`);
+
+  const items = data.content || data.data || data.items || [];
+  return items.map(mapApiListing);
+}
+
+export async function getPublishedListingDetails(id: string): Promise<Listing> {
+  const listing = await fetchJson<ApiListingResponse>(
+    `${API_BASE}/api/v1/listings/${id}`,
+  );
+  return mapApiListing(listing);
+}
+
+export async function recordListingView(listingId: string): Promise<void> {
+  await fetchJson<void>(`${API_BASE}/analytics/listings/view`, {
+    method: "POST",
+    body: JSON.stringify({ listingId }),
+  });
+}
+
+export async function getListingViewStats(
+  listingId: string,
+  params?: {
+    from?: string;
+    to?: string;
+    accuracy?: ViewAccuracy;
+  },
+): Promise<ViewStatsResponse> {
+  const query = new URLSearchParams();
+  if (params?.from) query.set("from", params.from);
+  if (params?.to) query.set("to", params.to);
+  if (params?.accuracy) query.set("accuracy", params.accuracy);
+
+  const suffix = query.toString();
+  return fetchJson<ViewStatsResponse>(
+    `${API_BASE}/analytics/listings/${listingId}/views${suffix ? `?${suffix}` : ""}`,
+  );
+}
+
+export async function getSellerDashboardSummary(): Promise<SellerDashboardSummaryResponse> {
+  return fetchJson<SellerDashboardSummaryResponse>(
+    `${API_BASE}/api/v1/seller/dashboard/summary`,
+  );
+}
+
+export async function getSellerDashboardViewsSeries(params?: {
+  from?: string;
+  to?: string;
+  accuracy?: ViewAccuracy;
+}): Promise<SellerDashboardViewsSeriesResponse> {
+  const query = new URLSearchParams();
+  if (params?.from) query.set("from", params.from);
+  if (params?.to) query.set("to", params.to);
+  if (params?.accuracy) query.set("accuracy", params.accuracy);
+
+  const suffix = query.toString();
+  return fetchJson<SellerDashboardViewsSeriesResponse>(
+    `${API_BASE}/api/v1/seller/dashboard/views-series${suffix ? `?${suffix}` : ""}`,
+  );
+}
+
+export async function getSellerTopPerformers(range = "7d", limit = 5): Promise<SellerTopPerformersResponse> {
+  const query = new URLSearchParams({ range, limit: String(limit) });
+  return fetchJson<SellerTopPerformersResponse>(
+    `${API_BASE}/api/v1/seller/dashboard/top-performers?${query.toString()}`,
+  );
+}
+
+export async function getSellerNeedsAttention(limit = 10): Promise<SellerNeedsAttentionResponse> {
+  const query = new URLSearchParams({ limit: String(limit) });
+  return fetchJson<SellerNeedsAttentionResponse>(
+    `${API_BASE}/api/v1/seller/listings/needs-attention?${query.toString()}`,
+  );
+}
+
+export async function getSellerRecentListings(limit = 10): Promise<SellerRecentListingsResponse> {
+  const query = new URLSearchParams({ limit: String(limit) });
+  return fetchJson<SellerRecentListingsResponse>(
+    `${API_BASE}/api/v1/seller/listings/recent?${query.toString()}`,
+  );
 }
 
 export async function createListingDraft(
@@ -499,6 +679,80 @@ export async function getProvinces(countryId: string): Promise<Province[]> {
 export async function getWards(provinceId: string): Promise<Ward[]> {
   return fetchJson<Ward[]>(
     `${API_BASE}/api/v1/locations/wards?provinceId=${provinceId}`,
+  );
+}
+
+export interface LocationLookupItem {
+  type: "WARD" | "STREET" | "POI" | string;
+  id: string;
+  name: string;
+  fullAddress: string;
+  lat: number;
+  lng: number;
+  score?: number;
+}
+
+export interface LocationSearchResponse {
+  query: string;
+  total: number;
+  items: LocationLookupItem[];
+}
+
+export interface ReverseGeocodeResponse {
+  normalizedAddress: string;
+  streetAddress?: string;
+  coordinate?: {
+    lat: number;
+    lng: number;
+  };
+  ward?: {
+    wardId: string;
+    name: string;
+  };
+  province?: {
+    provinceId: string;
+    name: string;
+  };
+  country?: {
+    countryId: string;
+    name: string;
+  };
+}
+
+export async function searchLocationSuggestions(params: {
+  q: string;
+  countryId?: string;
+  provinceId?: string;
+  wardId?: string;
+  lat?: number;
+  lng?: number;
+  limit?: number;
+}): Promise<LocationSearchResponse> {
+  const query = new URLSearchParams();
+  query.set("q", params.q);
+  query.set("limit", String(params.limit ?? 8));
+  if (params.countryId) query.set("countryId", params.countryId);
+  if (params.provinceId) query.set("provinceId", params.provinceId);
+  if (params.wardId) query.set("wardId", params.wardId);
+  if (typeof params.lat === "number") query.set("lat", String(params.lat));
+  if (typeof params.lng === "number") query.set("lng", String(params.lng));
+
+  return fetchJson<LocationSearchResponse>(
+    `${API_BASE}/api/v1/locations/search?${query.toString()}`,
+  );
+}
+
+export async function reverseGeocodeLocation(
+  lat: number,
+  lng: number,
+): Promise<ReverseGeocodeResponse> {
+  const query = new URLSearchParams({
+    lat: String(lat),
+    lng: String(lng),
+  });
+
+  return fetchJson<ReverseGeocodeResponse>(
+    `${API_BASE}/api/v1/locations/reverse?${query.toString()}`,
   );
 }
 

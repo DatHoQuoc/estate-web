@@ -12,7 +12,6 @@ import {
 } from "@/components/seller/property-details"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { mockUser } from "@/lib/mock-data"
 import { getListingDetails, getVirtualTour } from "@/lib/api-client"
 import type { Listing } from "@/lib/types"
 import { cn } from "@/lib/utils"

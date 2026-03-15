@@ -11,10 +11,9 @@ interface NaturalLanguageSearchProps {
 }
 
 const promptChips = [
-  "3 bed homes under $800k in Seattle",
+  "3 bed homes under 8B VND in District 2",
   "Pet-friendly rents near downtown",
   "Lake view villas with pools",
-  "Condos with parking in SF"
 ]
 
 export function NaturalLanguageSearch({ defaultQuery = "", onSearch }: NaturalLanguageSearchProps) {

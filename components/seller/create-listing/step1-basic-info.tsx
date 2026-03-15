@@ -1,6 +1,5 @@
 "use client";
 
-import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,16 +12,20 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Loader2, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Listing, Country, Province, Ward } from "@/lib/types";
-import { useState, useEffect } from "react";
+import type { Country, Province, Ward } from "@/lib/types";
+import { useState, useEffect, useMemo } from "react";
 import {
+  reverseGeocodeLocation,
+  searchLocationSuggestions,
   getCountries,
   getProvinces,
   getWards,
+  LocationLookupItem,
   CreateListingPayload,
 } from "@/lib/api-client";
+import MapPicker from "@/components/seller/create-listing/mapPicker";
 
 interface Step1BasicInfoProps {
   data: CreateListingPayload;
@@ -42,6 +45,15 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
   const [countries, setCountries] = useState<Country[]>([]);
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
+  const [mapLat, setMapLat] = useState(data.latitude ?? 10.7769);
+  const [mapLng, setMapLng] = useState(data.longitude ?? 106.7009);
+  const [suggestions, setSuggestions] = useState<LocationLookupItem[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [locationQuery, setLocationQuery] = useState("");
+  const [locationStatus, setLocationStatus] = useState<
+    "idle" | "loading" | "granted" | "denied" | "unsupported"
+  >("idle");
 
   //Get api
   useEffect(() => {
@@ -64,6 +76,46 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
     }
   }, [data.provinceId]);
 
+  useEffect(() => {
+    // Keep map state in sync when form state changes externally.
+    if (typeof data.latitude === "number" && typeof data.longitude === "number") {
+      setMapLat(data.latitude);
+      setMapLng(data.longitude);
+    }
+  }, [data.latitude, data.longitude]);
+
+  const requestCurrentLocation = () => {
+    if (typeof window === "undefined" || !("geolocation" in navigator)) {
+      setLocationStatus("unsupported");
+      return;
+    }
+
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setMapLat(latitude);
+        setMapLng(longitude);
+        setLocationStatus("granted");
+      },
+      () => {
+        setLocationStatus("denied");
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      },
+    );
+  };
+
+  useEffect(() => {
+    if (typeof data.latitude === "number" && typeof data.longitude === "number") return;
+    requestCurrentLocation();
+    // Run once on mount to pick an initial center near the current user.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   //handle
   const handleCountryChange = (val: string) => {
     onChange("countryId", val);
@@ -81,6 +133,79 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
     const newValue = Math.max(0, Math.min(10, currentValue + delta));
     onChange(field, newValue);
   };
+
+  const applyMapSelection = async () => {
+    onChange("latitude", Number(mapLat.toFixed(6)));
+    onChange("longitude", Number(mapLng.toFixed(6)));
+
+    try {
+      const reversed = await reverseGeocodeLocation(mapLat, mapLng);
+      const nextAddress = reversed.normalizedAddress || reversed.streetAddress;
+      if (nextAddress) {
+        onChange("address", nextAddress);
+        setLocationQuery(nextAddress);
+      }
+      if (reversed.country?.countryId) onChange("countryId", reversed.country.countryId);
+      if (reversed.province?.provinceId) onChange("provinceId", reversed.province.provinceId);
+      if (reversed.ward?.wardId) onChange("wardId", reversed.ward.wardId);
+      setLookupError(null);
+    } catch {
+      setLookupError("Could not reverse-geocode this point. Coordinates are still applied.");
+    }
+  };
+
+  useEffect(() => {
+    const query = locationQuery.trim();
+
+    if (query.length < 2) {
+      setSuggestions([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    let mounted = true;
+    const timeout = setTimeout(() => {
+      setSearchLoading(true);
+      searchLocationSuggestions({
+        q: query,
+        countryId: data.countryId || undefined,
+        provinceId: data.provinceId || undefined,
+        wardId: data.wardId || undefined,
+        lat: mapLat,
+        lng: mapLng,
+        limit: 8,
+      })
+        .then((res) => {
+          if (!mounted) return;
+          setSuggestions(res.items || []);
+
+          if (res.items?.length > 0) {
+            // UX: typing recenters preview to top ranked match.
+            setMapLat(res.items[0].lat);
+            setMapLng(res.items[0].lng);
+          }
+
+          setLookupError(null);
+        })
+        .catch(() => {
+          if (!mounted) return;
+          setLookupError("Address lookup failed. Try again.");
+          setSuggestions([]);
+        })
+        .finally(() => {
+          if (mounted) setSearchLoading(false);
+        });
+    }, 250);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+    };
+  }, [locationQuery, data.countryId, data.provinceId, data.wardId, mapLat, mapLng]);
+
+  const filteredMapOptions = useMemo(() => {
+    return suggestions;
+  }, [suggestions]);
   //Return
 
   return (
@@ -297,6 +422,113 @@ export function Step1BasicInfo({ data, onChange }: Step1BasicInfoProps) {
               value={data.streetAddress}
               onChange={(e) => onChange("address", e.target.value)}
             />
+          </div>
+
+          <div className="rounded-lg border border-dashed p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div>
+                <p className="font-medium text-sm">Select from map</p>
+                <p className="text-xs text-muted-foreground">
+                  Pin the exact location. We try to initialize the map near your current location first.
+                </p>
+              </div>
+              <Button type="button" variant="outline" onClick={requestCurrentLocation}>
+                <MapPin className="h-4 w-4 mr-1" /> Use Current Location
+              </Button>
+            </div>
+            {locationStatus === "loading" && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" /> Getting your current location...
+              </p>
+            )}
+            {locationStatus === "denied" && (
+              <p className="text-xs text-muted-foreground">
+                Location permission was denied. Using fallback center.
+              </p>
+            )}
+            {locationStatus === "unsupported" && (
+              <p className="text-xs text-muted-foreground">
+                Geolocation is not supported in this browser. Using fallback center.
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Coordinates: {Number(data.latitude ?? mapLat).toFixed(6)}, {Number(data.longitude ?? mapLng).toFixed(6)}
+            </p>
+
+            <div className="space-y-2">
+              <Label htmlFor="location-lookup">Address lookup</Label>
+              <div className="relative">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="location-lookup"
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && filteredMapOptions[0]) {
+                      e.preventDefault();
+                      const top = filteredMapOptions[0];
+                      setMapLat(top.lat);
+                      setMapLng(top.lng);
+                      setLocationQuery(top.fullAddress || top.name);
+                    }
+                  }}
+                  placeholder={searchLoading ? "Searching addresses..." : "Type address and map will locate..."}
+                  className="pl-9"
+                />
+              </div>
+
+              {!searchLoading && (
+                <div className="max-h-48 overflow-y-auto rounded-md border divide-y">
+                  {filteredMapOptions.length > 0 ? (
+                    filteredMapOptions.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="w-full text-left p-3 hover:bg-muted transition-colors"
+                        onClick={() => {
+                          setMapLat(item.lat);
+                          setMapLng(item.lng);
+                          setLocationQuery(item.fullAddress || item.name);
+                        }}
+                      >
+                        <p className="text-sm font-medium text-foreground">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{item.fullAddress}</p>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground p-3">
+                      {locationQuery.trim().length < 2
+                        ? "Type at least 2 characters to search."
+                        : "No location matches your search."}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {searchLoading && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Searching addresses...
+                </p>
+              )}
+              {lookupError && <p className="text-xs text-destructive">{lookupError}</p>}
+            </div>
+
+            <MapPicker
+              lat={mapLat}
+              lng={mapLng}
+              onChange={(lat, lng) => {
+                setMapLat(lat);
+                setMapLng(lng);
+              }}
+            />
+
+            <p className="text-xs text-muted-foreground">
+              Selected point: {mapLat.toFixed(6)}, {mapLng.toFixed(6)}
+            </p>
+
+            <Button type="button" onClick={applyMapSelection}>
+              Apply Selected Location
+            </Button>
           </div>
         </CardContent>
       </Card>

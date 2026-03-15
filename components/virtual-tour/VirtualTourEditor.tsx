@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { mockUser } from "@/lib/mock-data";
 import { getVirtualTour, updateTourScene, TourSceneResponse } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { VirtualTourViewer } from "./VirtualTourViewer";
@@ -173,7 +172,7 @@ export const VirtualTourEditor = () => {
                     Scenes ({scenes.length})
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 max-h-[200px] overflow-y-auto">
+                <CardContent className="space-y-2 max-h-50 overflow-y-auto">
                   {scenes.map((scene, idx) => (
                     <button
                       key={scene.sceneId}
@@ -186,7 +185,7 @@ export const VirtualTourEditor = () => {
                       )}
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                        <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                           <span className="text-xs font-bold text-emerald-700">{idx + 1}</span>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -230,7 +229,7 @@ export const VirtualTourEditor = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm">Hotspots</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 max-h-[200px] overflow-y-auto">
+                <CardContent className="space-y-2 max-h-50 overflow-y-auto">
                   {currentScene?.hotspotsJson.length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-2">Click panorama to add</p>
                   )}
@@ -239,9 +238,9 @@ export const VirtualTourEditor = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           {hotspot.type === "info" ? (
-                            <Info className="h-3 w-3 text-blue-600 flex-shrink-0" />
+                            <Info className="h-3 w-3 text-blue-600 shrink-0" />
                           ) : (
-                            <Link2 className="h-3 w-3 text-emerald-600 flex-shrink-0" />
+                            <Link2 className="h-3 w-3 text-emerald-600 shrink-0" />
                           )}
                           <p className="text-xs font-medium truncate">
                             {hotspot.type === "info"
@@ -252,7 +251,7 @@ export const VirtualTourEditor = () => {
                       </div>
                       <button
                         onClick={() => handleDeleteHotspot(hotspot.id)}
-                        className="text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0"
+                        className="text-muted-foreground hover:text-red-500 transition-colors shrink-0"
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>

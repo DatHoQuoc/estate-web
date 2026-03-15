@@ -79,7 +79,15 @@ export function MapResults({ listings, selectedId, onSelect, onConnect, onAskAI 
               <Popup>
                 <div className="space-y-2">
                   <p className="font-semibold text-foreground text-sm">{listing.title}</p>
-                  <p className="text-xs text-muted-foreground">${listing.price?.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {typeof listing.price === "number"
+                      ? new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                          maximumFractionDigits: 0,
+                        }).format(listing.price)
+                      : "Contact for price"}
+                  </p>
                   <Button size="sm" className="w-full" onClick={() => onSelect(listing.id)}>
                     View details
                   </Button>

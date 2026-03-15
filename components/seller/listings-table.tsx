@@ -84,7 +84,7 @@ export function ListingsTable({
   const formatPrice = (price: number, type: string) => {
     const formatted = new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "VND",
       maximumFractionDigits: 0,
     }).format(price)
     return type === "rent" ? `${formatted}/mo` : formatted
