@@ -854,6 +854,106 @@ function mapDiscoverSearchItemToListing(item: DiscoverSearchListingItem): Listin
   return mapApiListing(apiListing);
 }
 
+interface ListingLocationLookupCache {
+  countries?: Promise<Country[]>;
+  provinces: Map<string, Promise<Province[]>>;
+  wards: Map<string, Promise<Ward[]>>;
+}
+
+function createListingLocationLookupCache(): ListingLocationLookupCache {
+  return {
+    provinces: new Map<string, Promise<Province[]>>(),
+    wards: new Map<string, Promise<Ward[]>>(),
+  };
+}
+
+function getCountriesCached(cache: ListingLocationLookupCache): Promise<Country[]> {
+  if (!cache.countries) {
+    cache.countries = getCountries().catch(() => []);
+  }
+  return cache.countries;
+}
+
+function getProvincesCached(
+  cache: ListingLocationLookupCache,
+  countryId: string,
+): Promise<Province[]> {
+  const cached = cache.provinces.get(countryId);
+  if (cached) return cached;
+
+  const request = getProvinces(countryId).catch(() => []);
+  cache.provinces.set(countryId, request);
+  return request;
+}
+
+function getWardsCached(
+  cache: ListingLocationLookupCache,
+  provinceId: string,
+): Promise<Ward[]> {
+  const cached = cache.wards.get(provinceId);
+  if (cached) return cached;
+
+  const request = getWards(provinceId).catch(() => []);
+  cache.wards.set(provinceId, request);
+  return request;
+}
+
+async function resolveListingLocationNames(
+  listing: Listing,
+  cache: ListingLocationLookupCache,
+): Promise<Listing> {
+  const countryId = listing.location?.countryId;
+  const provinceId = listing.location?.provinceId;
+  const wardId = listing.location?.wardId;
+
+  if (!countryId && !provinceId && !wardId) return listing;
+
+  const [countries, provinces, wards] = await Promise.all([
+    countryId ? getCountriesCached(cache) : Promise.resolve([]),
+    countryId ? getProvincesCached(cache, countryId) : Promise.resolve([]),
+    provinceId ? getWardsCached(cache, provinceId) : Promise.resolve([]),
+  ]);
+
+  const countryName = countryId
+    ? countries.find((country) => country.countryId === countryId)?.name || ""
+    : "";
+  const provinceName = provinceId
+    ? provinces.find((province) => province.provinceId === provinceId)?.name || ""
+    : "";
+  const wardName = wardId
+    ? wards.find((ward) => ward.wardId === wardId)?.name || ""
+    : "";
+
+  return {
+    ...listing,
+    location: {
+      ...listing.location,
+      city: countryName || listing.location.city,
+      district: provinceName || listing.location.district,
+      ward: wardName || listing.location.ward,
+    },
+  };
+}
+
+async function hydrateDiscoverSearchListings(listings: Listing[]): Promise<Listing[]> {
+  if (listings.length === 0) return listings;
+
+  const cache = createListingLocationLookupCache();
+
+  const hydrated = await Promise.all(
+    listings.map(async (listing) => {
+      try {
+        const detailedListing = await getPublishedListingDetails(listing.id);
+        return resolveListingLocationNames(detailedListing, cache);
+      } catch {
+        return resolveListingLocationNames(listing, cache);
+      }
+    }),
+  );
+
+  return hydrated;
+}
+
 
 export async function listSellerListings(): Promise<Listing[]> {
   const data = await fetchJson<{
@@ -1208,7 +1308,7 @@ export async function searchDiscoverListings(
   );
 
   const vectorResults = mapVectorSearchResponseToListings(response);
-  if (vectorResults.length > 0) return vectorResults;
+  if (vectorResults.length > 0) return hydrateDiscoverSearchListings(vectorResults);
 
   const candidates = Array.isArray(response)
     ? response
@@ -1221,11 +1321,13 @@ export async function searchDiscoverListings(
   const promptStyleResults = candidates
     .filter((item): item is ChatListingPublishedMessage => isRecord(item) && typeof item.listingId === "string")
     .map(mapPromptListingToListing);
-  if (promptStyleResults.length > 0) return promptStyleResults;
+  if (promptStyleResults.length > 0) return hydrateDiscoverSearchListings(promptStyleResults);
 
-  return candidates
+  return hydrateDiscoverSearchListings(
+    candidates
     .map((item) => mapDiscoverSearchItemToListing(item as DiscoverSearchListingItem))
-    .filter((item): item is Listing => Boolean(item));
+    .filter((item): item is Listing => Boolean(item)),
+  );
 }
 
 export async function createChatSession(): Promise<ChatSessionResponseDto> {

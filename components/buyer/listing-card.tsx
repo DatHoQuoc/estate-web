@@ -25,6 +25,9 @@ function formatPrice(value?: number) {
 
 export function ListingCard({ listing, onCardClick, onView, onConnect, onAskAI, highlight }: ListingCardProps) {
   const cover = listing.images?.find((img) => img.isCover) || listing.images?.[0];
+  const locationLabel = [listing.location?.ward, listing.location?.district, listing.location?.city]
+    .filter(Boolean)
+    .join(", ");
 
   const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!onCardClick) return;
@@ -61,7 +64,7 @@ export function ListingCard({ listing, onCardClick, onView, onConnect, onAskAI, 
           <div className="absolute bottom-3 left-3 space-y-1">
             <p className="text-lg font-semibold drop-shadow">{formatPrice(listing.price)}</p>
             <p className="text-xs opacity-80 drop-shadow flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" /> {listing.location?.district || listing.location?.city || ""}
+              <MapPin className="h-3.5 w-3.5" /> {locationLabel}
             </p>
           </div>
         </div>
